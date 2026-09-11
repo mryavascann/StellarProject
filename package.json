@@ -1,0 +1,34 @@
+{
+  "name": "kasa",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Ortak kasa — TL yatır, dolar cinsinden getiri kazan, kurala göre harca (Stellar Pro Hackathon 2026)",
+  "type": "module",
+  "packageManager": "pnpm@11.22.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "pnpm run test:scripts && pnpm -r --if-present test && pnpm run test:contract",
+    "test:scripts": "vitest run scripts",
+    "test:ts": "pnpm -r --if-present test",
+    "test:contract": "node scripts/run-cargo.mjs test --manifest-path contracts/shared-vault/Cargo.toml --lib",
+    "test:live": "cross-env KASA_MODE=live pnpm -r --if-present test:live",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dev": "pnpm -r --parallel --if-present dev",
+    "sim": "pnpm --filter @kasa/mock-anchor dev",
+    "build:contract": "node scripts/run-cargo.mjs contract-build --manifest-path contracts/shared-vault/Cargo.toml",
+    "deploy": "tsx scripts/deploy.ts",
+    "deploy:mock-token": "tsx scripts/deploy-mock-token.ts",
+    "gen:accounts": "tsx scripts/gen-accounts.ts",
+    "seed": "tsx scripts/seed.ts"
+  },
+  "devDependencies": {
+    "@stellar/stellar-sdk": "^17.0.1",
+    "@types/node": "^22.10.2",
+    "cross-env": "^7.0.3",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

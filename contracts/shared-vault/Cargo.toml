@@ -1,0 +1,22 @@
+[package]
+name = "shared-vault"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+# "lib" olmadan test.rs kontratı kendi crate'inden çağıramaz; "cdylib" olmadan wasm çıkmaz.
+crate-type = ["lib", "cdylib"]
+
+[dependencies]
+# Protokol 27 ile eşleşen sürüm (kaynak: skills.stellar.org smart-contracts skill).
+soroban-sdk = "27"
+
+[dev-dependencies]
+soroban-sdk = { version = "27", features = ["testutils"] }
+
+[profile.release]
+opt-level = "z"
+# overflow-checks: aritmetik taşması sessizce sarmalanmaz. Bölüm 8.1 test 22'nin temeli.
+overflow-checks = true
+lto = true

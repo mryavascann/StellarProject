@@ -1,0 +1,29 @@
+node_modules/
+dist/
+.next/
+out/
+
+# Rust / Soroban
+target/
+**/*.rs.bk
+
+# Ortam dosyalari — GIZLI ANAHTAR ICERIR, asla commit edilmez.
+# Yalnizca .env.example git'e girer.
+.env
+.env.*
+!.env.example
+
+# Uretilmis dagitim ciktilari
+.stellar/
+*.wasm
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Test / arac ciktilari
+coverage/
+*.log
