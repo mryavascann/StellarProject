@@ -1,6 +1,6 @@
 # PROJE DURUMU
 
-Son güncelleme: 2026-09-17 22:55 · Ajan: claude-durumsuz-dagitim · Mod: **simulation**
+Son güncelleme: 2026-09-17 23:10 · Ajan: claude-durumsuz-dagitim · Mod: **simulation**
 
 ## Faz
 Şu an: **Faz S3 tamamlandı** — simülasyonda tam döngü testnet'te çalışıyor, tam yığın Vercel'de yayında.
@@ -25,13 +25,13 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (`docs/faz0-can
 - [x] **Tam yığın Vercel'de yayında:** https://stellar-kasa.vercel.app — web + API + mock anchor
       tek origin. `pnpm test:deploy` yeşil: TOML uçları dağıtımı gösteriyor, SEP-10 sequence 0,
       `/api/vault` testnet'ten 4 üyeli snapshot, istemci paketinde `localhost` kalıntısı yok.
-      **Not:** bu doğrulama durumsuz düzeltmeden ÖNCEKİ sürüme aittir (aşağıya bak).
+- [x] **Durumsuz düzeltme yayında ve ölçümle doğrulandı** (23:05, commit `ad1bbf5`):
+      SEP-10 token'ından hemen sonra deposit **200** (önce 401) · 12 eşzamanlı durum sorgusu **12/12**
+      (önce 4/12) · 1 sn arayla 5 sıralı sorgu **5/5** (önce 0/5) · withdraw memo'su `memo_type: id` ile geliyor.
+      Son durum `pending_trust`: trustline yoksa anchor ödemeyi yapmıyor — A.4 davranışı korunuyor.
 - [x] `pnpm typecheck` temiz.
 
 ## Kırık / eksik
-- [ ] **Durumsuz düzeltme henüz dağıtılmadı.** Üretim dağıtımı için izin gerekti; commit
-      `f061a20` yerelde tam yeşil ama canlı URL hâlâ eski (durumlu) sürümü sunuyor.
-      Dağıtımdan sonra ilk iş: `pnpm test:deploy` + oturum yoklaması (devir notundaki ölçüm).
 - [ ] Web tarayıcıda **elle** tıklanarak denenmedi (kullanılabilir tarayıcı oturumu yok).
 - [ ] Cüzdan kiti (Freighter vb.) gerçek eklentiyle denenmedi.
 - [ ] `pnpm test:live` gerçek uçlara karşı çalıştırılmadı; `.env.live` değerleri etkinlik günü gelecek.
@@ -44,15 +44,14 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (`docs/faz0-can
 ## Ortam
 - node 24.19 · pnpm 11.22 · stellar CLI 28 · rustc 1.98 GNU · TypeScript 5.9
 - `.env.simulation` dolu; `KASA_DEPLOY_URL` eklendi. Secret'lar loga yazılmadı.
+- Vercel projesi GitHub deposuna bağlı: `git push origin main` üretim dağıtımını tetikler.
 - Vercel: proje `stellar-kasa`, kök `apps/web`; API ve mock anchor aynı Next route handler'ında
   (`apps/web/src/app/api/[[...route]]/route.ts` → `@kasa/api/vercel`).
 
 ## Sıradaki iş (öncelik sırasıyla)
-1. **Durumsuz sürümü dağıt** (üretim dağıtımı izni gerekiyor), sonra `pnpm test:deploy` ve
-   oturum yoklamasını tekrarla: SEP-10 sonrası deposit 200 dönmeli, sıralı yoklamalar aktif kalmalı.
-2. Tarayıcı bağlantısı sağlanınca https://stellar-kasa.vercel.app/giris üzerinden akışı elle dene.
-3. Etkinlik Faz 0: `docs/faz0-canli-gecis.md` adım adım uygulanır → GO/NO-GO raporu.
-4. Demo paketi: README güncel, sunum, video.
+1. Tarayıcı bağlantısı sağlanınca https://stellar-kasa.vercel.app/giris üzerinden akışı elle dene.
+2. Etkinlik Faz 0: `docs/faz0-canli-gecis.md` adım adım uygulanır → GO/NO-GO raporu.
+3. Demo paketi: README güncel, sunum, video.
 
 ## Tuzaklar / öğrenilenler
 - **Serverless'ta bellekteki her şey kaybolur.** Ölçüm (17 Eylül): SEP-10'dan hemen sonraki
