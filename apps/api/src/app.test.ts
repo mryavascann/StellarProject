@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createAnchorClient } from "./anchor/client";
 import { createApi } from "./app";
 import { createMockDefindex } from "./defindex/mock";
+import { JoinDisabledError, type JoinResult } from "./vault-join";
 import type { VaultSnapshot } from "./stellar-vault";
 
 const anchorSigner = Keypair.random();
@@ -28,7 +29,7 @@ const SNAPSHOT: VaultSnapshot = {
   ledger: [{ kind: "Deposit", member: member.publicKey(), amount: 500_000_000n, at: 1, requestId: null }],
 };
 
-function api(overrides: { readVault?: () => Promise<VaultSnapshot> } = {}) {
+function api(overrides: { readVault?: () => Promise<VaultSnapshot>; join?: (account: string) => Promise<JoinResult> } = {}) {
   const mockAnchor = createMockAnchor({
     signingSecret: anchorSigner.secret(),
     issuerPublic: issuer.publicKey(),
@@ -49,7 +50,7 @@ function api(overrides: { readVault?: () => Promise<VaultSnapshot> } = {}) {
       readVault: overrides.readVault ?? (async () => SNAPSHOT),
       buildTransaction,
       submit: async () => ({ hash: "8".repeat(64) }),
-      join,
+      join: overrides.join ?? join,
     },
     anchor: createAnchorClient(
       { KASA_MODE: "simulation", ANCHOR_HOME_DOMAIN: "localhost:8788" },
@@ -161,6 +162,13 @@ describe("Kasa API", () => {
     const bad = await post(app, "/api/vault/join", { account: "BOZUK" });
     expect(bad.status).toBe(400);
     expect(await bad.json()).toMatchObject({ error: expect.stringContaining("adres") });
+  });
+
+  it("kasa: sunucuda admin anahtarı yoksa davet ucu sebebini söyler", async () => {
+    const { app } = api({ join: async () => { throw new JoinDisabledError(); } });
+    const response = await post(app, "/api/vault/join", { account: Keypair.random().publicKey() });
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({ error: expect.stringContaining("ADMIN_SECRET") });
   });
 
   it("defindex: özet bigint'leri metin verir; başkasının imzalı işlemi submit'ten geçmez", async () => {

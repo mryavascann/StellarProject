@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 import { AnchorAuthRequiredError } from "../anchor/client";
+import { JoinDisabledError } from "../vault-join";
 
 /** bigint alanlarını metne çevirerek JSON yazar; `number`'a dönüşüm hassasiyet kaybettirir. */
 export function json(context: Context, value: unknown, status: ContentfulStatusCode = 200): Response {
@@ -16,6 +17,8 @@ export function json(context: Context, value: unknown, status: ContentfulStatusC
  */
 export function handleError(error: unknown, context: Context): Response {
   if (error instanceof AnchorAuthRequiredError) return json(context, { error: error.code }, 401);
+  // Yapılandırma eksiği: 503 ama sebebi söylenir, çünkü kullanıcı aksi hâlde neyin eksik olduğunu bilemez.
+  if (error instanceof JoinDisabledError) return json(context, { error: error.message }, 503);
   if (error instanceof TypeError || error instanceof RangeError) return json(context, { error: error.message }, 400);
   console.error("[api]", error instanceof Error ? error.message : error);
   return json(context, { error: "İşlem şu an yapılamıyor. Tekrar dene." }, 503);

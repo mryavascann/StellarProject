@@ -1,5 +1,16 @@
 import { StrKey } from "@stellar/stellar-sdk";
 
+/**
+ * Sunucuda admin anahtarı yok: katılma kapalı. Ayrı tip olmasının sebebi, bunun
+ * kullanıcıya gösterilmesi gereken bir yapılandırma eksiği olması — genel
+ * "İşlem şu an yapılamıyor" mesajına karışırsa kimse sebebi bulamaz. Sır sızdırmaz.
+ */
+export class JoinDisabledError extends Error {
+  constructor() {
+    super("Kasaya katılma şu an kapalı: sunucuda ADMIN_SECRET tanımlı değil.");
+  }
+}
+
 export interface JoinResult {
   /** Hesap zincirde yoktu ve test parasıyla açıldı mı? */
   readonly funded: boolean;
@@ -31,9 +42,7 @@ export function createVaultJoiner(dependencies: VaultJoinerDependencies) {
     if (!StrKey.isValidEd25519PublicKey(account)) {
       throw new TypeError("Geçerli bir Stellar adresi gerekli (G ile başlar).");
     }
-    if (!dependencies.adminSecret) {
-      throw new Error("Kasaya katılma kapalı: sunucuda ADMIN_SECRET tanımlı değil.");
-    }
+    if (!dependencies.adminSecret) throw new JoinDisabledError();
 
     const members = await dependencies.members();
     if (members.includes(account)) return { funded: false, added: false };
