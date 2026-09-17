@@ -9,6 +9,7 @@ const config: NextConfig = {
   reactStrictMode: true,
   async rewrites() {
     return [
+      { source: "/health", destination: "/api/health" },
       { source: "/.well-known/stellar.toml", destination: "/api/anchor-proxy/.well-known/stellar.toml" },
       { source: "/auth", destination: "/api/anchor-proxy/auth" },
       { source: "/sep24/:path*", destination: "/api/anchor-proxy/sep24/:path*" },

@@ -52,6 +52,7 @@ export function createVercelApp(environment: Environment, options: VercelAppOpti
   });
   const api = createRuntimeApi(environment, { anchor });
   const app = new Hono();
+  app.get("/api/health", (context) => context.json({ ok: true }));
   app.route("/api/anchor-proxy", mockAnchor);
   app.route("/", api);
   return app;

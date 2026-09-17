@@ -32,6 +32,7 @@ describe("Vercel birleşik sunucu uygulaması", () => {
     });
 
     expect((await app.request("/health")).status).toBe(200);
+    expect((await app.request("/api/health")).status).toBe(200);
 
     const tomlResponse = await app.request("/api/anchor-proxy/.well-known/stellar.toml");
     const toml = await tomlResponse.text();
