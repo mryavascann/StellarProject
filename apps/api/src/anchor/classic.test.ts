@@ -6,7 +6,7 @@ import {
   buildWithdrawalPaymentTransaction,
   submitClassicTransaction,
   type ClassicGateway,
-} from "./classic.js";
+} from "./classic";
 
 const member = Keypair.random();
 const issuer = Keypair.random().publicKey();

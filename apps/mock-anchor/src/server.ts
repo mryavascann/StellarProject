@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { ANCHOR, NETWORK, PORTS } from "../../../config/simulation.js";
-import { createHorizonAnchorChain, createMockAnchor } from "./app.js";
+import { ANCHOR, NETWORK, PORTS } from "../../../config/simulation";
+import { createHorizonAnchorChain, createMockAnchor } from "./app";
 
 function environmentValue(environment: string, key: string): string {
   const match = new RegExp(`^${key}=(.*)$`, "mu").exec(environment);

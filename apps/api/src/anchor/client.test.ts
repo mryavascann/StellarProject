@@ -2,7 +2,7 @@ import { createMemoryAnchorChain, createMockAnchor } from "@kasa/mock-anchor";
 import { Keypair, Networks, Transaction, TransactionBuilder } from "@stellar/stellar-sdk";
 import { describe, expect, it, vi } from "vitest";
 
-import { AnchorAuthRequiredError, createAnchorClient, type AnchorClient } from "./client.js";
+import { AnchorAuthRequiredError, createAnchorClient, type AnchorClient } from "./client";
 
 const signer = Keypair.random();
 const issuer = Keypair.random();

@@ -41,6 +41,9 @@ importers:
       '@kasa/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@kasa/mock-anchor':
+        specifier: workspace:*
+        version: link:../mock-anchor
       '@stellar/stellar-sdk':
         specifier: ^17.0.1
         version: 17.0.1(debug@4.4.3)
@@ -51,9 +54,6 @@ importers:
         specifier: ^4.9.7
         version: 4.13.7
     devDependencies:
-      '@kasa/mock-anchor':
-        specifier: workspace:*
-        version: link:../mock-anchor
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.20.2)(jsdom@30.0.1(@noble/hashes@2.4.0))(lightningcss@1.33.0)
@@ -85,6 +85,9 @@ importers:
       '@creit.tech/stellar-wallets-kit':
         specifier: 2.6.0
         version: 2.6.0(@types/react@19.3.0)(bufferutil@4.1.0)(debug@4.4.3)(near-api-js@5.1.1)(react@19.3.0)(tslib@2.8.1)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      '@kasa/api':
+        specifier: workspace:*
+        version: link:../api
       '@kasa/core':
         specifier: workspace:*
         version: link:../../packages/core

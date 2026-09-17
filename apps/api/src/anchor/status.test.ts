@@ -1,7 +1,7 @@
 import { ANCHOR_STATUSES, BRAND } from "@kasa/core";
 import { describe, expect, it } from "vitest";
 
-import { mapAnchorStatus } from "./status.js";
+import { mapAnchorStatus } from "./status";
 
 describe("anchor durum eşlemesi", () => {
   it.each(ANCHOR_STATUSES)("%s durumunu marka metnine ve aksiyona eşler", (status) => {

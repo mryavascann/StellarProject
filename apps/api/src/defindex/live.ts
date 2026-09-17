@@ -1,7 +1,7 @@
 import { type DefindexSDK, SupportedNetworks } from "@defindex/sdk";
 import Decimal from "decimal.js";
 
-import type { DefindexAdapter, UnsignedVaultTransaction, VaultBalance, VaultInfo, VaultSubmission } from "./types.js";
+import type { DefindexAdapter, UnsignedVaultTransaction, VaultBalance, VaultInfo, VaultSubmission } from "./types";
 
 /**
  * SDK'nın kullandığımız kesiti. `Pick` olması bilinçli: gerçek `DefindexSDK` sınıfıyla

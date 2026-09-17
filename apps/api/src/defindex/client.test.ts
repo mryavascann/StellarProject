@@ -1,9 +1,9 @@
 import { Asset, Keypair, Networks } from "@stellar/stellar-sdk";
 import { describe, expect, it, vi } from "vitest";
 
-import { DEFINDEX } from "../../../../config/simulation.js";
-import { createDefindexAdapter } from "./client.js";
-import type { DefindexSdkLike } from "./live.js";
+import { DEFINDEX } from "../../../../config/simulation";
+import { createDefindexAdapter } from "./client";
+import type { DefindexSdkLike } from "./live";
 
 const issuer = Keypair.random();
 const SIMULATION_ENV = {

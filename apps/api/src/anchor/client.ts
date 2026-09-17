@@ -1,8 +1,8 @@
-import { fetchAnchorMetadata } from "./sep1.js";
-import { exchangeChallenge, fetchChallenge } from "./sep10.js";
-import { buildWithdrawalPayment, requestWithFreshJwt } from "./sep24.js";
-import { requestFreshQuote, type AnchorQuote } from "./sep38.js";
-import type { AnchorMetadata, WithdrawalPayment } from "./types.js";
+import { fetchAnchorMetadata } from "./sep1";
+import { exchangeChallenge, fetchChallenge } from "./sep10";
+import { buildWithdrawalPayment, requestWithFreshJwt } from "./sep24";
+import { requestFreshQuote, type AnchorQuote } from "./sep38";
+import type { AnchorMetadata, WithdrawalPayment } from "./types";
 
 /**
  * MOD SINIRI (KARAR K-003). `KASA_MODE` yalnızca burada ve `defindex/client.ts`'te okunur.

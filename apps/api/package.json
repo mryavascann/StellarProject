@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./vercel": "./src/vercel-app.ts"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
@@ -14,12 +17,12 @@
     "@hono/node-server": "^1.19.1",
     "@iarna/toml": "^2.2.5",
     "@kasa/core": "workspace:*",
+    "@kasa/mock-anchor": "workspace:*",
     "@stellar/stellar-sdk": "^17.0.1",
     "decimal.js": "^10.6.0",
     "hono": "^4.9.7"
   },
   "devDependencies": {
-    "vitest": "^2.1.8",
-    "@kasa/mock-anchor": "workspace:*"
+    "vitest": "^2.1.8"
   }
 }

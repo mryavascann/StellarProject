@@ -11,13 +11,13 @@ import { fiatToAsset, toStroopsExact } from "@kasa/core";
 import { Keypair, Networks, Transaction, TransactionBuilder } from "@stellar/stellar-sdk";
 import { describe, expect, it } from "vitest";
 
-import { ANCHOR, NETWORK, SEED, VAULT_INIT } from "../../../config/simulation.js";
-import { createHorizonGateway } from "./anchor/classic.js";
-import { createAnchorClient } from "./anchor/client.js";
-import { createApi } from "./app.js";
-import { createHorizonVaultChain, createMockDefindex } from "./defindex/mock.js";
-import { loadEnvironment } from "./env.js";
-import { buildVaultTransaction, createVaultRpc, readVaultSnapshot, submitVaultTransaction } from "./stellar-vault.js";
+import { ANCHOR, NETWORK, SEED, VAULT_INIT } from "../../../config/simulation";
+import { createHorizonGateway } from "./anchor/classic";
+import { createAnchorClient } from "./anchor/client";
+import { createApi } from "./app";
+import { createHorizonVaultChain, createMockDefindex } from "./defindex/mock";
+import { loadEnvironment } from "./env";
+import { buildVaultTransaction, createVaultRpc, readVaultSnapshot, submitVaultTransaction } from "./stellar-vault";
 
 const DEPOSIT_FIAT = "1500.00"; // ⚠ SİM: 1500 TRY ≈ 30 USDC → eşik (20 pay) üstü talep açılabilsin
 const enabled = process.env.KASA_E2E === "1";

@@ -1,12 +1,12 @@
 import { Keypair } from "@stellar/stellar-sdk";
 import { Hono } from "hono";
 
-import { ANCHOR } from "../../../config/simulation.js";
-import { buildChallenge, issueToken, verifyChallenge, verifyToken } from "./auth.js";
-import type { MockAnchorChain } from "./chain.js";
-import { registerSep38 } from "./sep38.js";
+import { ANCHOR } from "../../../config/simulation";
+import { buildChallenge, issueToken, verifyChallenge, verifyToken } from "./auth";
+import type { MockAnchorChain } from "./chain";
+import { registerSep38 } from "./sep38";
 
-export { createHorizonAnchorChain, createMemoryAnchorChain, type MockAnchorChain, type ObservedPayment } from "./chain.js";
+export { createHorizonAnchorChain, createMemoryAnchorChain, type MockAnchorChain, type ObservedPayment } from "./chain";
 
 export interface MockAnchorOptions {
   readonly signingSecret: string;
@@ -14,6 +14,8 @@ export interface MockAnchorOptions {
   readonly custodialPublic: string;
   readonly chain: MockAnchorChain;
   readonly now?: () => Date;
+  readonly homeDomain?: string;
+  readonly publicOrigin?: string;
 }
 
 interface MockTransaction {
@@ -49,8 +51,9 @@ export function createMockAnchor(options: MockAnchorOptions) {
   const app = new Hono<{ Variables: Variables }>();
   const now = options.now ?? (() => new Date());
   const signingKey = Keypair.fromSecret(options.signingSecret).publicKey();
-  const origin = `http://${ANCHOR.homeDomain}`;
-  const webAuthDomain = ANCHOR.homeDomain;
+  const homeDomain = options.homeDomain ?? ANCHOR.homeDomain;
+  const origin = (options.publicOrigin ?? `http://${homeDomain}`).replace(/\/$/u, "");
+  const webAuthDomain = new URL(origin).host;
   const transactions = new Map<string, MockTransaction>();
   const quotes = new Map<string, number>();
   const stepMs = ANCHOR.stateStepSeconds * 1000;
@@ -76,7 +79,7 @@ export function createMockAnchor(options: MockAnchorOptions) {
     if (!account) return context.json({ error: "account gerekli" }, 400);
     try {
       return context.json({
-        transaction: buildChallenge(account, options.signingSecret, ANCHOR.homeDomain, webAuthDomain),
+        transaction: buildChallenge(account, options.signingSecret, homeDomain, webAuthDomain),
         network_passphrase: "Test SDF Network ; September 2015",
       });
     } catch {
@@ -88,7 +91,7 @@ export function createMockAnchor(options: MockAnchorOptions) {
     try {
       const body = await context.req.json<{ transaction?: string }>();
       if (!body.transaction) return context.json({ error: "transaction gerekli" }, 400);
-      const account = verifyChallenge(body.transaction, options.signingSecret, ANCHOR.homeDomain, webAuthDomain);
+      const account = verifyChallenge(body.transaction, options.signingSecret, homeDomain, webAuthDomain);
       const token = await issueToken(account, options.signingSecret, now(), ANCHOR.jwtTtlSeconds);
       return context.json({ token });
     } catch {

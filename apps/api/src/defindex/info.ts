@@ -1,4 +1,4 @@
-import type { DefindexAdapter, VaultBalance, VaultInfo } from "./types.js";
+import type { DefindexAdapter, VaultBalance, VaultInfo } from "./types";
 
 export interface VaultOverview {
   readonly balance: VaultBalance;

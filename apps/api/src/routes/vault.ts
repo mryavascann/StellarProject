@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 
-import type { VaultCall, VaultSnapshot } from "../stellar-vault.js";
-import { json, requireStroops, requireText } from "./respond.js";
+import type { VaultCall, VaultSnapshot } from "../stellar-vault";
+import { json, requireStroops, requireText } from "./respond";
 
 export interface VaultRouteDependencies {
   /** Kasa adı ve üye etiketleri kontratta değil, demo yapılandırmasındadır (⚠ SİM, config/simulation.ts). */

@@ -1,5 +1,5 @@
-import { signAndSubmit, type Waiter, type XdrSigner } from "./deposit.js";
-import type { DefindexAdapter, VaultSubmission } from "./types.js";
+import { signAndSubmit, type Waiter, type XdrSigner } from "./deposit";
+import type { DefindexAdapter, VaultSubmission } from "./types";
 
 export interface VaultWithdrawRun {
   readonly caller: string;

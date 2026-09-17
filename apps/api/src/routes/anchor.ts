@@ -5,10 +5,10 @@ import {
   buildWithdrawalPaymentTransaction,
   submitClassicTransaction,
   type ClassicGateway,
-} from "../anchor/classic.js";
-import type { AnchorClient } from "../anchor/client.js";
-import { mapAnchorStatus } from "../anchor/status.js";
-import { json, requireText } from "./respond.js";
+} from "../anchor/classic";
+import type { AnchorClient } from "../anchor/client";
+import { mapAnchorStatus } from "../anchor/status";
+import { json, requireText } from "./respond";
 
 const FIAT_PATTERN = /^\d+\.\d{2}$/u;
 const ASSET_PATTERN = /^\d+\.\d{7}$/u;

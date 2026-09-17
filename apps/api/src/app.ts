@@ -1,15 +1,15 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
-import type { AnchorClient } from "./anchor/client.js";
-import type { Waiter } from "./defindex/deposit.js";
-import type { DefindexAdapter } from "./defindex/types.js";
-import { anchorRoutes, type ClassicDependencies } from "./routes/anchor.js";
-import { defindexRoutes } from "./routes/defindex.js";
-import { handleError, json } from "./routes/respond.js";
-import { vaultRoutes, type VaultRouteDependencies } from "./routes/vault.js";
+import type { AnchorClient } from "./anchor/client";
+import type { Waiter } from "./defindex/deposit";
+import type { DefindexAdapter } from "./defindex/types";
+import { anchorRoutes, type ClassicDependencies } from "./routes/anchor";
+import { defindexRoutes } from "./routes/defindex";
+import { handleError, json } from "./routes/respond";
+import { vaultRoutes, type VaultRouteDependencies } from "./routes/vault";
 
-export type { VaultSnapshot } from "./stellar-vault.js";
+export type { VaultSnapshot } from "./stellar-vault";
 
 export interface ApiDependencies {
   readonly vault: VaultRouteDependencies;

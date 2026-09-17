@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { fetchAnchorMetadata } from "./sep1.js";
+import { fetchAnchorMetadata } from "./sep1";
 
 const VALID = `SIGNING_KEY="GABC"
 TRANSFER_SERVER_SEP0024="http://anchor.test/sep24"

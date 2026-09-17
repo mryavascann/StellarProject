@@ -12,8 +12,8 @@ import {
 import Decimal from "decimal.js";
 import { fromStroops, toStroops, toStroopsExact } from "@kasa/core";
 
-import { ANCHOR, DEFINDEX, NETWORK } from "../../../../config/simulation.js";
-import type { DefindexAdapter, UnsignedVaultTransaction, VaultBalance, VaultInfo, VaultSubmission } from "./types.js";
+import { ANCHOR, DEFINDEX, NETWORK } from "../../../../config/simulation";
+import type { DefindexAdapter, UnsignedVaultTransaction, VaultBalance, VaultInfo, VaultSubmission } from "./types";
 
 /**
  * Mock adaptörün zincirle konuştuğu dar kapı. Testler bunu sahte nesneyle değiştirir;

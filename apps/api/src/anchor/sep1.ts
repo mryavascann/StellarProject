@@ -1,6 +1,6 @@
 import * as TOML from "@iarna/toml";
 
-import type { AnchorMetadata } from "./types.js";
+import type { AnchorMetadata } from "./types";
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 

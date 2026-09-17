@@ -1,6 +1,6 @@
 import { Networks, WebAuth } from "@stellar/stellar-sdk";
 
-import type { AnchorMetadata } from "./types.js";
+import type { AnchorMetadata } from "./types";
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 export type ChallengeSigner = (transactionXdr: string) => Promise<string>;

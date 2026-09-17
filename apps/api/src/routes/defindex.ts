@@ -1,10 +1,10 @@
 import { Networks, Transaction, TransactionBuilder } from "@stellar/stellar-sdk";
 import { Hono } from "hono";
 
-import { SEND_DELAY_MS, type Waiter } from "../defindex/deposit.js";
-import { readVaultOverview } from "../defindex/info.js";
-import type { DefindexAdapter } from "../defindex/types.js";
-import { json, requireStroops, requireText } from "./respond.js";
+import { SEND_DELAY_MS, type Waiter } from "../defindex/deposit";
+import { readVaultOverview } from "../defindex/info";
+import type { DefindexAdapter } from "../defindex/types";
+import { json, requireStroops, requireText } from "./respond";
 
 const defaultWait: Waiter = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 

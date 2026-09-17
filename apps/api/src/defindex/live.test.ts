@@ -2,7 +2,7 @@ import { SupportedNetworks } from "@defindex/sdk";
 import { Networks } from "@stellar/stellar-sdk";
 import { describe, expect, it, vi } from "vitest";
 
-import { createLiveDefindex, type DefindexSdkLike } from "./live.js";
+import { createLiveDefindex, type DefindexSdkLike } from "./live";
 
 const VAULT = `C${"A".repeat(55)}`;
 const CALLER = "GCALLER";

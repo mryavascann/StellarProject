@@ -1,10 +1,10 @@
 import { DefindexSDK, SupportedNetworks } from "@defindex/sdk";
 import { Asset, Keypair } from "@stellar/stellar-sdk";
 
-import { DEFINDEX, NETWORK } from "../../../../config/simulation.js";
-import { createLiveDefindex, type DefindexSdkLike } from "./live.js";
-import { createHorizonVaultChain, createMockDefindex, type MockVaultChain } from "./mock.js";
-import type { DefindexAdapter } from "./types.js";
+import { DEFINDEX, NETWORK } from "../../../../config/simulation";
+import { createLiveDefindex, type DefindexSdkLike } from "./live";
+import { createHorizonVaultChain, createMockDefindex, type MockVaultChain } from "./mock";
+import type { DefindexAdapter } from "./types";
 
 /**
  * MOD SINIRI (KARAR K-003). `KASA_MODE` yalnızca burada ve `anchor/client.ts`'te okunur.

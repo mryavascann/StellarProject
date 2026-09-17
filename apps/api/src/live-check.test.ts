@@ -1,9 +1,9 @@
 import { Account, Keypair, Networks, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
 import { describe, expect, it, vi } from "vitest";
 
-import type { AnchorClient } from "./anchor/client.js";
-import type { DefindexAdapter } from "./defindex/types.js";
-import { runLiveChecks } from "./live-check.js";
+import type { AnchorClient } from "./anchor/client";
+import type { DefindexAdapter } from "./defindex/types";
+import { runLiveChecks } from "./live-check";
 
 const account = Keypair.random().publicKey();
 const issuer = Keypair.random().publicKey();

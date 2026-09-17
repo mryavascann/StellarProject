@@ -1,6 +1,6 @@
 import { Account, Asset, BASE_FEE, Horizon, Memo, Operation, Transaction, TransactionBuilder } from "@stellar/stellar-sdk";
 
-import type { WithdrawalPayment } from "./types.js";
+import type { WithdrawalPayment } from "./types";
 
 /**
  * Klasik Stellar işlemleri (Horizon): trustline ve anchor'a giden memo'lu ödeme.

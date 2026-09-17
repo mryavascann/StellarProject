@@ -1,4 +1,4 @@
-import type { JwtProvider, WithdrawalPayment, WithdrawalResponse } from "./types.js";
+import type { JwtProvider, WithdrawalPayment, WithdrawalResponse } from "./types";
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 

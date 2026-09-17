@@ -1,8 +1,8 @@
 import { Keypair, Networks, Transaction, TransactionBuilder, WebAuth } from "@stellar/stellar-sdk";
 import { describe, expect, it, vi } from "vitest";
 
-import { authenticateSep10 } from "./sep10.js";
-import type { AnchorMetadata } from "./types.js";
+import { authenticateSep10 } from "./sep10";
+import type { AnchorMetadata } from "./types";
 
 const server = Keypair.random();
 const customer = Keypair.random();

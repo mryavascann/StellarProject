@@ -1,11 +1,11 @@
 import { Keypair, Networks, Transaction, TransactionBuilder } from "@stellar/stellar-sdk";
 import { describe, expect, it, vi } from "vitest";
 
-import { depositThroughVault } from "./deposit.js";
-import { readVaultOverview } from "./info.js";
-import { createMockDefindex } from "./mock.js";
-import type { DefindexAdapter } from "./types.js";
-import { withdrawThroughVault } from "./withdraw.js";
+import { depositThroughVault } from "./deposit";
+import { readVaultOverview } from "./info";
+import { createMockDefindex } from "./mock";
+import type { DefindexAdapter } from "./types";
+import { withdrawThroughVault } from "./withdraw";
 
 const issuer = Keypair.random();
 const caller = Keypair.random();

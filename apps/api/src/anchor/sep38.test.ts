@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { requestFreshQuote } from "./sep38.js";
+import { requestFreshQuote } from "./sep38";
 
 describe("SEP-38", () => {
   it("süresi dolmuş quote'u sessizce yeniden fiyatlar ve string tutarı korur", async () => {

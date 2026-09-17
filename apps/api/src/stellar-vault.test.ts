@@ -7,7 +7,7 @@ import {
   readVaultSnapshot,
   submitVaultTransaction,
   type VaultRpc,
-} from "./stellar-vault.js";
+} from "./stellar-vault";
 
 const CONTRACT = StrKey.encodeContract(Buffer.alloc(32, 7));
 const member = Keypair.random().publicKey();

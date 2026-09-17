@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
-import { AnchorAuthRequiredError } from "../anchor/client.js";
+import { AnchorAuthRequiredError } from "../anchor/client";
 
 /** bigint alanlarını metne çevirerek JSON yazar; `number`'a dönüşüm hassasiyet kaybettirir. */
 export function json(context: Context, value: unknown, status: ContentfulStatusCode = 200): Response {

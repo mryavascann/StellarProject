@@ -3,10 +3,10 @@ import { Account } from "@stellar/stellar-sdk";
 import { Keypair, Networks, Transaction, TransactionBuilder } from "@stellar/stellar-sdk";
 import { describe, expect, it, vi } from "vitest";
 
-import { createAnchorClient } from "./anchor/client.js";
-import { createApi } from "./app.js";
-import { createMockDefindex } from "./defindex/mock.js";
-import type { VaultSnapshot } from "./stellar-vault.js";
+import { createAnchorClient } from "./anchor/client";
+import { createApi } from "./app";
+import { createMockDefindex } from "./defindex/mock";
+import type { VaultSnapshot } from "./stellar-vault";
 
 const anchorSigner = Keypair.random();
 const issuer = Keypair.random();

@@ -1,8 +1,8 @@
 import { Keypair, Networks, Operation, Transaction, TransactionBuilder } from "@stellar/stellar-sdk";
 import { describe, expect, it, vi } from "vitest";
 
-import { ANCHOR, DEFINDEX } from "../../../../config/simulation.js";
-import { createMockDefindex, type MockVaultChain } from "./mock.js";
+import { ANCHOR, DEFINDEX } from "../../../../config/simulation";
+import { createMockDefindex, type MockVaultChain } from "./mock";
 
 const issuer = Keypair.random();
 const caller = Keypair.random();

@@ -1,7 +1,7 @@
 import { Keypair, Networks, Transaction, TransactionBuilder } from "@stellar/stellar-sdk";
 import { describe, expect, it } from "vitest";
 
-import { createMemoryAnchorChain, createMockAnchor, type ObservedPayment } from "./app.js";
+import { createMemoryAnchorChain, createMockAnchor, type ObservedPayment } from "./app";
 
 const anchor = Keypair.random();
 const issuer = Keypair.random();
@@ -66,6 +66,24 @@ describe("mock anchor", () => {
     expect(body).toContain(`issuer="${issuer.publicKey()}"`);
     expect(body).toContain("TRANSFER_SERVER_SEP0024");
     expect(body).toContain("ANCHOR_QUOTE_SERVER");
+  });
+
+  it("Vercel dağıtımında TOML ve popup URL'lerini dış HTTPS origin'iyle üretir", async () => {
+    const instance = createMockAnchor({
+      signingSecret: anchor.secret(),
+      issuerPublic: issuer.publicKey(),
+      custodialPublic: issuer.publicKey(),
+      chain: createMemoryAnchorChain(),
+      homeDomain: "stellar-kasa.vercel.app",
+      publicOrigin: "https://stellar-kasa.vercel.app",
+    });
+    const toml = await (await instance.request("/.well-known/stellar.toml")).text();
+    expect(toml).toContain('TRANSFER_SERVER_SEP0024="https://stellar-kasa.vercel.app/sep24"');
+    expect(toml).toContain('WEB_AUTH_ENDPOINT="https://stellar-kasa.vercel.app/auth"');
+
+    const token = await authenticate(instance);
+    const { body } = await interactive(instance, token, "deposit", "10.0000000");
+    expect(body.url).toMatch(/^https:\/\/stellar-kasa\.vercel\.app\/interactive\//u);
   });
 
   it("SEP-10 challenge sequence 0 üretir, home ve web auth alanlarını ayrı taşır", async () => {

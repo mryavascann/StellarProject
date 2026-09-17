@@ -2,10 +2,10 @@ import { Transaction, TransactionBuilder, Networks } from "@stellar/stellar-sdk"
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { createAnchorClient, type AnchorClient } from "./anchor/client.js";
-import { createDefindexAdapter } from "./defindex/client.js";
-import type { DefindexAdapter } from "./defindex/types.js";
-import { loadEnvironment, type Environment } from "./env.js";
+import { createAnchorClient, type AnchorClient } from "./anchor/client";
+import { createDefindexAdapter } from "./defindex/client";
+import type { DefindexAdapter } from "./defindex/types";
+import { loadEnvironment, type Environment } from "./env";
 
 export interface LiveCheckDependencies {
   readonly anchor?: AnchorClient;

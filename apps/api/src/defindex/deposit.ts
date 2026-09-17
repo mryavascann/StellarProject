@@ -1,6 +1,6 @@
 import { Networks, Transaction, TransactionBuilder } from "@stellar/stellar-sdk";
 
-import type { DefindexAdapter, UnsignedVaultTransaction, VaultSubmission } from "./types.js";
+import type { DefindexAdapter, UnsignedVaultTransaction, VaultSubmission } from "./types";
 
 /** Bölüm 10: imzaladıktan sonra göndermeden önce ~1 saniye beklenir. */
 export const SEND_DELAY_MS = 1000;

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { buildWithdrawalPayment, requestWithFreshJwt } from "./sep24.js";
+import { buildWithdrawalPayment, requestWithFreshJwt } from "./sep24";
 
 describe("SEP-24", () => {
   it("401 sonrasında JWT'yi yenileyip kullanıcı akışını aynı istekten sürdürür", async () => {

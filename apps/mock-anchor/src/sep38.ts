@@ -1,7 +1,7 @@
 import Decimal from "decimal.js";
 import type { Hono } from "hono";
 
-import { ANCHOR } from "../../../config/simulation.js";
+import { ANCHOR } from "../../../config/simulation";
 
 function sevenDecimalAmount(value: unknown): value is string {
   return typeof value === "string" && /^\d+\.\d{7}$/u.test(value);
