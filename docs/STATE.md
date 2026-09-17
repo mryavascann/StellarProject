@@ -1,6 +1,6 @@
 # PROJE DURUMU
 
-Son güncelleme: 2026-09-16 23:40 · Ajan: claude-s3-fullloop · Mod: **simulation**
+Son güncelleme: 2026-09-17 21:27 · Ajan: codex-live-gate · Mod: **simulation**
 
 ## Faz
 Şu an: **Faz S3 tamamlandı** — simülasyonda tam döngü testnet'te çalışıyor.
@@ -14,9 +14,11 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (A.5 listesi, `
 - [x] Mock anchor: **13/13** — SEP-1/10/24/38, JWT 15 dk, quote 90 sn, popup DENY,
       **deposit tamamlanınca gerçek USDC ödemesi (trustline yoksa `pending_trust`)**,
       **withdraw ödemesi Horizon'dan doğrulanır, yanlış memo → `pending_external` askıda**.
-- [x] API: **80/80** — anchor istemcisi (mod sınırı, JWT oturumu, 401 → `auth_required`),
+- [x] API: **84/84** — anchor istemcisi (mod sınırı, JWT oturumu, 401 → `auth_required`),
       DeFindex mock/live aynı arayüz + fabrika, klasik işlemler (trustline, memo'lu ödeme),
-      kontrat XDR üretimi/gönderimi, route'lar, hata eşlemesi.
+      kontrat XDR üretimi/gönderimi, route'lar, hata eşlemesi ve canlı geçiş kapısı.
+- [x] `pnpm test:live`: gerçek anchor TOML + `/info` + SEP-10 sequence 0 ve gerçek DeFindex
+      vault/APY kontrolünü çalıştıracak şekilde hazır; yanlış env/TOML eşleşmesinde duruyor.
 - [x] Web: **34/34** — API istemcisi (şeffaf SEP-10 tekrarı), biçimlendirme, akışlar, bileşenler.
 - [x] **Uçtan uca (8.5): testnet'te 2 kez geçti (~85 sn)** — `pnpm test:e2e`. Taze üye: add_member →
       trustline → 1500 TL yatır → USDC (zincir) → pay (zincir) → kasaya kilitle → eşik üstü talep →
@@ -26,15 +28,17 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (A.5 listesi, `
 - [x] `pnpm typecheck` temiz (web dahil, `baseUrl` kaldırıldı).
 
 ## Kırık / eksik
-- [ ] Web tarayıcıda **elle** tıklanarak denenmedi (yalnızca HTTP 200 + birim testleri). İlk iş: `pnpm dev`, test hesabıyla gir, bir yatırma akışı izle.
+- [ ] Web tarayıcıda **elle** tıklanarak denenmedi. 17 Eylül denemesinde üç sunucu açıldı fakat
+      kullanılabilir in-app/harici tarayıcı oturumu bulunamadı; bağlantı gelince test hesabıyla akış izlenecek.
 - [ ] Cüzdan kiti (Freighter vb.) gerçek eklentiyle denenmedi; kod d.ts'e göre yazıldı.
-- [ ] `pnpm test:live` hedefi var ama içi boş (canlı entegrasyon testleri etkinlik günü yazılacak).
+- [ ] `pnpm test:live` gerçek uçlara karşı çalıştırılmadı; etkinlik günü verilecek `.env.live` değerleri henüz yok.
 - [ ] Canlı `getVaultInfo` pay fiyatı vermez → web bakiye/pay oranından türetir; canlıda doğrulanacak.
-- [ ] Değişiklikler **commit edilmedi** (37 dosya). Kullanıcı onayıyla commit atılmalı.
+- [ ] Bu görevdeki canlı kontrol ve doküman değişiklikleri commit edilmedi.
 
 ## Test durumu
-- Kontrat **30/30** · Core **49/49** · Scripts **13/13** · Mock anchor **13/13** · API **80/80** · Web **34/34**
-- Toplam **219/219 yeşil** · Uçtan uca **1/1** (testnet, `KASA_E2E=1` ile)
+- Kontrat **30/30** · Core **49/49** · Scripts **13/13** · Mock anchor **13/13** · API **84/84** · Web **34/34**
+- Toplam **223/223 yeşil** · Uçtan uca **1/1** (önceki testnet kanıtı; bu görevde tekrar koşulmadı)
+- `pnpm typecheck` temiz · Next.js üretim derlemesi temiz (7 statik rota)
 
 ## Ortam
 - node 24.19 · pnpm 11.22 · stellar CLI 28 · rustc 1.98 GNU · TypeScript 5.9
@@ -44,9 +48,9 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (A.5 listesi, `
 - pnpm-workspace `allowBuilds`: appkit/bufferutil/secp256k1/utf-8-validate açıkça `false`.
 
 ## Sıradaki iş (öncelik sırasıyla)
-1. Web'i tarayıcıda elle dene (`pnpm dev` → http://localhost:3000/giris, `.env.simulation` üye secret'ı). Cila.
-2. `test:live` içeriği: gerçek anchor `/info`, TOML, SEP-10; gerçek DeFindex `getVaultInfo`.
-3. Etkinlik Faz 0: A.5 listesi → `config/live.ts`, `.env.live`, `KASA_MODE=live`.
+1. Tarayıcı bağlantısı sağlanınca web'i elle dene (`pnpm dev` → http://localhost:3000/giris, test hesabı).
+2. Etkinlik Faz 0: A.5 listesi → `.env.live`, `KASA_MODE=live` → `pnpm test:live`.
+3. Canlı kontrolden sonra GO/NO-GO raporu; ardından gerçek uçtan uca akış.
 4. Demo senaryosu (Bölüm 14): QR/davet linki, sunum, video.
 
 ## Tuzaklar / öğrenilenler
@@ -61,3 +65,5 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (A.5 listesi, `
 - DeFindex SDK gerçek tipleri: `getVaultAPY → {apy:number}`, `xdr: string|null`, tutarlar `number[]` (skill dokümanından farklı).
 - E2E her koşuda friendbot'tan yeni hesap alır ve ~10 USDC'yi o hesapta bırakır (önemsiz).
 - MinGW/Windows notları önceki STATE'ten geçerli: `pnpm test:contract` kullan, `--lib`.
+- Bu makinede `make` yok; PowerShell ilkesi `pnpm.ps1` dosyasını engelliyor. `pnpm.cmd` kullan.
+- Browser eklentisi/oturumu bağlı değilse elle UI testi yapılamıyor; HTTP smoke veya kaynak incelemesi bunun yerine geçmez.

@@ -134,6 +134,16 @@ davranışı buna yakın tutulacak.
 
 ---
 
+## Yerel çalışma skill'i
+
+### 10. `C:/Users/Buğra/.codex/plugins/cache/openai-bundled/browser/26.810.52044/skills/control-in-app-browser/SKILL.md`
+**Ne:** In-app veya bağlı harici tarayıcıyla görünür/etkileşimli yerel web testi.
+**Etkilediği karar:** 17 Eylül manuel UI doğrulamasında tarayıcı runtime'ı kullanıldı; kullanılabilir
+oturum bulunmayınca kaynak incelemesi ya da farklı otomasyon yüzeyi “elle test geçti” sayılmadı.
+Engel `docs/STATE.md` içinde açık bırakıldı; TypeScript ve üretim derlemesi ayrı kanıt olarak koşuldu.
+
+---
+
 ## Kapatılmayan boşluklar
 
 | Boşluk | Nasıl kapatılacak |
