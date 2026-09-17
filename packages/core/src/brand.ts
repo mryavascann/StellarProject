@@ -222,6 +222,7 @@ const MESSAGES = {
   emptyLedger: "Bu kasada henüz hareket yok.",
   inviteLine: "{isim} seni {kasa} kasasına çağırdı.",
   noWallet: "Devam etmek için bir cüzdana ihtiyacın var.",
+  popupBlocked: "Tarayıcı banka ekranını engelledi. Bu site için açılır pencereye izin verip tekrar dene.",
   retry: "Tekrar dene",
 } as const;
 

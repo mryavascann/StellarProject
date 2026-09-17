@@ -6,7 +6,7 @@ import { useState } from "react";
 import { RequireSession } from "@/components/RequireSession";
 import { Button, Card, ErrorState, Skeleton, StatusBadge, Steps, type StepView } from "@/components/ui";
 import type { AnchorStatusView } from "@/lib/api";
-import { depositFlow } from "@/lib/flows";
+import { depositFlow, openAnchorPopup } from "@/lib/flows";
 import { normalizeFiatInput, statusText, tl } from "@/lib/format";
 import { useSession } from "@/lib/session";
 import { useVaultData } from "@/lib/useVault";
@@ -42,8 +42,13 @@ function Deposit({ address }: { address: string }) {
     (limits.minAmount === null || Number(amountFiat) >= Number(limits.minAmount)) &&
     (limits.maxAmount === null || Number(amountFiat) <= Number(limits.maxAmount));
 
+  /**
+   * Pencere TIKLAMA ANINDA açılır; anchor adresi birkaç ağ çağrısı sonra gelir ve pencere
+   * oraya yollanır. Önce çağrıları yapıp sonra açmaya çalışırsak tarayıcı popup'ı engeller.
+   */
   async function start() {
     if (!signer || !amountFiat) return;
+    const popup = openAnchorPopup(() => undefined);
     setRunning(true);
     setFailure(null);
     setSteps(INITIAL_STEPS);
@@ -53,6 +58,7 @@ function Deposit({ address }: { address: string }) {
         amountFiat,
         report: (key, state, detail) => setSteps((previous) => previous.map((step) => (step.key === key ? { ...step, state, ...(detail ? { detail } : {}) } : step))),
         onStatus: setStatus,
+        popup,
       });
       setDone(result.vaultHash);
     } catch (caught) {

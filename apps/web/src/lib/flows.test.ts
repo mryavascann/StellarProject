@@ -1,3 +1,4 @@
+import { BRAND } from "@kasa/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { depositFlow, openAnchorPopup, withdrawFlow } from "./flows";
@@ -30,8 +31,10 @@ describe("popup", () => {
       order.push("open");
       return null;
     });
-    openAnchorPopup("http://anchor/x", () => undefined);
+    const popup = openAnchorPopup(() => undefined);
     expect(order).toEqual(["listen", "open"]);
+    // Pencere açılamadıysa adres yollanamaz; akış bunu kullanıcıya söyleyecek.
+    expect(popup.show("http://anchor/x")).toBe(false);
   });
 });
 
@@ -59,19 +62,21 @@ describe("para yatırma akışı", () => {
       "/api/vault/submit": () => ({ hash: "h3" }),
     });
     const steps: string[] = [];
-    const openPopup = vi.fn((_url: string, _onDone: () => void) => () => undefined);
+    const show = vi.fn((_url: string) => true);
+    const popup = { show, close: vi.fn() };
 
     const result = await depositFlow({
       signer,
       amountFiat: "1000.00",
       report: (key, state) => steps.push(`${key}:${state}`),
       onStatus: () => undefined,
-      openPopup,
+      popup,
       pollMs: 1,
     });
 
     expect(result.vaultHash).toBe("h3");
-    expect(openPopup).toHaveBeenCalledWith("http://anchor/i", expect.any(Function));
+    expect(show).toHaveBeenCalledWith("http://anchor/i");
+    expect(popup.close).toHaveBeenCalledOnce();
     expect(steps).toEqual(["banka:active", "hesap:active", "banka:done", "getiri:active", "getiri:done", "kasa:active", "kasa:done"]);
     expect(calls.indexOf("/api/anchor/trustline/tx")).toBeLessThan(calls.indexOf("/api/anchor/deposit"));
   });
@@ -107,5 +112,27 @@ describe("para çekme akışı", () => {
     const result = await withdrawFlow({ signer, shareStroops: 300000000n, report: () => undefined, onStatus: () => undefined, pollMs: 1 });
     expect(result.paymentHash).toBe("PH");
     expect(calls.indexOf("/api/anchor/classic/submit")).toBeLessThan(calls.indexOf("/api/anchor/payment"));
+  });
+});
+
+describe("banka ekranı popup'ı", () => {
+  it("tarayıcı pencereyi engellerse ne yapılacağını söyler", async () => {
+    mockApi({
+      "/api/anchor/info": () => ({ trustlineRequired: false }),
+      "/api/anchor/challenge": () => ({ transaction: "CH" }),
+      "/api/anchor/token": () => ({ token: "JWT", expiresAt: Date.now() + 900_000 }),
+      "/api/anchor/deposit": () => ({ id: "1", url: "http://anchor/i", amountAsset: "20.0000000", quoteExpiresAt: "x" }),
+    });
+
+    await expect(
+      depositFlow({
+        signer,
+        amountFiat: "1000.00",
+        report: () => undefined,
+        onStatus: () => undefined,
+        popup: { show: () => false, close: () => undefined },
+        pollMs: 1,
+      }),
+    ).rejects.toThrow(BRAND.messages.popupBlocked);
   });
 });

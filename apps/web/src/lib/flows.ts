@@ -1,4 +1,4 @@
-import { toStroopsExact } from "@kasa/core";
+import { BRAND, toStroopsExact } from "@kasa/core";
 
 import { api, withAnchorSession, type AnchorStatusView } from "./api";
 import { STATUS_POLL_MS } from "./config";
@@ -16,15 +16,36 @@ export type StepReporter = (key: string, state: StepState, detail?: string) => v
 const FINAL = new Set(["completed", "error", "unknown"]);
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-/** Popup dinleyicisi pencere AÇILMADAN ÖNCE kaydedilir (Bölüm 9 kural 3). */
-export function openAnchorPopup(url: string, onDone: () => void): () => void {
+export interface AnchorPopup {
+  /** Anchor adresi geldiğinde pencereyi oraya yollar; pencere açılamamışsa false döner. */
+  show(url: string): boolean;
+  close(): void;
+}
+
+/**
+ * Banka ekranı penceresi. İKİ AŞAMALI olmasının sebebi: tarayıcılar `window.open`'a yalnız
+ * kullanıcı tıklamasının hemen ardından izin verir. Anchor adresini almak birkaç ağ çağrısı
+ * sürdüğü için pencere önce BOŞ olarak tıklama anında açılır, adres gelince oraya yollanır.
+ * Dinleyici pencere açılmadan ÖNCE kaydedilir (Bölüm 9 kural 3).
+ */
+export function openAnchorPopup(onDone: () => void): AnchorPopup {
   const listener = (event: MessageEvent) => {
     const data = event.data as { type?: unknown } | null;
     if (data && typeof data === "object" && data.type === "KASA_ANCHOR_DONE") onDone();
   };
   window.addEventListener("message", listener);
-  window.open(url, "kasa-banka", "width=480,height=640");
-  return () => window.removeEventListener("message", listener);
+  const handle = window.open("", "kasa-banka", "width=480,height=640");
+  return {
+    show(url) {
+      if (!handle || handle.closed) return false;
+      handle.location.href = url;
+      return true;
+    },
+    close() {
+      window.removeEventListener("message", listener);
+      if (handle && !handle.closed) handle.close();
+    },
+  };
 }
 
 /** Anchor durumunu yoklar; her adımda arayüze durum metnini verir. Uçtan uca `completed` bekler. */
@@ -68,7 +89,8 @@ export interface DepositRun {
   readonly amountFiat: string;
   readonly report: StepReporter;
   readonly onStatus: (status: AnchorStatusView) => void;
-  readonly openPopup?: typeof openAnchorPopup;
+  /** Kullanıcı tıklamasında açılmış banka ekranı penceresi (bkz. openAnchorPopup). */
+  readonly popup: AnchorPopup;
   readonly pollMs?: number;
 }
 
@@ -82,12 +104,12 @@ export async function depositFlow(run: DepositRun): Promise<{ vaultHash: string 
   const info = await api.anchorInfo();
   if (info.trustlineRequired) await ensureTrustline(signer, report);
   const started = await withAnchorSession(signer, () => api.anchorDeposit(signer.address, run.amountFiat));
-  const close = (run.openPopup ?? openAnchorPopup)(started.url, () => undefined);
   try {
+    if (!run.popup.show(started.url)) throw new Error(BRAND.messages.popupBlocked);
     const finalStatus = await pollAnchorStatus(signer.address, started.id, "deposit", run.onStatus, { poll: run.pollMs });
     if (finalStatus.status !== "completed") throw new Error(finalStatus.description);
   } finally {
-    close();
+    run.popup.close();
   }
   report("banka", "done");
 
