@@ -37,7 +37,7 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (A.5 listesi, `
 - [ ] Canlı `getVaultInfo` pay fiyatı vermez → web bakiye/pay oranından türetir; canlıda doğrulanacak.
 - [ ] Vercel'deki web arayüzü henüz uzaktaki API/mock-anchor'a bağlı değil; oturum sonrası işlem ekranları
       tarayıcının `localhost:8787` adresine erişmeye çalışır. Tam demo için API dağıtımı ve `NEXT_PUBLIC_KASA_API_URL` gerekir.
-- [ ] Bu görevdeki Vercel dağıtım/doküman değişiklikleri commit edilmedi.
+- [x] Vercel dağıtım yapılandırması ve doküman değişiklikleri sürümlenip `origin/main` dalına gönderildi.
 
 ## Test durumu
 - Kontrat **30/30** · Core **49/49** · Scripts **13/13** · Mock anchor **13/13** · API **84/84** · Web **34/34**
