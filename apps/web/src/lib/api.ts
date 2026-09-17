@@ -84,6 +84,13 @@ export interface WithdrawalPaymentView {
   readonly memoType: "id";
 }
 
+/** Davet ucunun yanıtı: hesap açıldı mı, üye eklendi mi. */
+export interface JoinResultView {
+  readonly funded: boolean;
+  readonly added: boolean;
+  readonly hash?: string;
+}
+
 export type AnchorStatusView = { readonly status: string } & StatusText;
 export type TransferDirection = "deposit" | "withdraw";
 
@@ -126,6 +133,7 @@ export const api = {
   vault: () => request<VaultView>("/api/vault"),
   vaultTx: (account: string, call: Record<string, unknown>) => request<{ xdr: string }>("/api/vault/tx", post({ account, ...call })),
   vaultSubmit: (signedXdr: string) => request<{ hash: string }>("/api/vault/submit", post({ signedXdr })),
+  vaultJoin: (account: string) => request<JoinResultView>("/api/vault/join", post({ account })),
 
   anchorInfo: () => request<AnchorInfoView>("/api/anchor/info"),
   anchorChallenge: (account: string) => request<{ transaction: string }>("/api/anchor/challenge", post({ account })),

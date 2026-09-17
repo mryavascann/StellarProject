@@ -61,6 +61,8 @@ describe.skipIf(!enabled)("uçtan uca: TL → kasa → talep → onay → execut
         readVault: () => readVaultSnapshot(vaultOptions(admin.publicKey()), rpc),
         buildTransaction: (account, call) => buildVaultTransaction(vaultOptions(account), rpc, call),
         submit: (signedXdr) => submitVaultTransaction(vaultOptions(admin.publicKey()), rpc, signedXdr),
+        // Uçtan uca akışta üyeyi admin doğrudan ekliyor; davet ucu ayrı testte kapsanıyor.
+        join: async () => ({ funded: false, added: false }),
       },
       anchor: createAnchorClient(environment, { fetcher: async (url, init) => mockAnchor.request(url, init) }),
       classic: { gateway: createHorizonGateway(NETWORK.horizonUrl), networkPassphrase: NETWORK.networkPassphrase },

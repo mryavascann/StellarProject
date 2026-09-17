@@ -243,6 +243,27 @@ zaten istemcinindir) veya ödeme etiketi için memo alanını kullanamazsak.
 
 ---
 
+## K-016 · KARAR · Kasaya katılma daveti sunucudaki admin anahtarıyla imzalanır
+
+**Karar:** `POST /api/vault/join` bir cüzdan adresi alır; hesap zincirde yoksa friendbot ile açar,
+sonra `add_member`'ı **sunucudaki ADMIN anahtarıyla** imzalayıp gönderir. Üye olmayan biri kasayı
+görebilir ama yatıramaz; ana ekranda "Kasaya katıl" kartı çıkar.
+
+**Gerekçe:** Demo senaryosu (Bölüm 14) salondaki kişilerin telefonundan katılmasını istiyor ve
+Bölüm 11 ekran 1 zaten "davet linki/QR" diyor. Her cüzdanı elle admin'e ekletmek bunu imkânsız kılar.
+
+**Kontrat DEĞİŞMEDİ:** `add_member` hâlâ yalnızca admin'e açık (Bölüm 8.1 test 5 aynen geçiyor).
+Değişen tek şey, demo kasasının admin anahtarını sunucunun taşıması.
+
+**Bedeli — bilerek kabul edildi:** Sunucu admin yetkisine sahip olur (üye ekleme/çıkarma, talep iptali).
+Kasa testnet'te ve içindeki varlık kendi bastığımız mock token olduğu için gerçek bir değer riski yok.
+`ADMIN_SECRET` sunucuda tanımlı değilse uç kapalıdır ve bunu kullanıcıya açıkça söyler.
+
+**Mainnet'e giderse:** bu karar geçersizdir. Orada davet, admin anahtarını sunucuya koymadan
+(örn. imzalı davet kodu + üyenin kendi imzası) çözülmelidir. Mainnet zaten kapsam dışı (Bölüm 13).
+
+---
+
 ## Roadmap (kapsam dışı — dokunma, buraya yaz)
 
 Bölüm 13'ün kapsam dışı listesi: çoklu kasa, kasalar arası transfer, karmaşık davet akışı,

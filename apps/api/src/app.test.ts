@@ -37,6 +37,10 @@ function api(overrides: { readVault?: () => Promise<VaultSnapshot> } = {}) {
   });
   const submit = vi.fn(async (_transaction: Transaction) => ({ hash: "9".repeat(64) }));
   const buildTransaction = vi.fn(async () => "XDR");
+  const join = vi.fn(async (account: string) => {
+    if (!account.startsWith("G")) throw new TypeError("Geçerli bir Stellar adresi gerekli (G ile başlar).");
+    return { funded: true, added: true, hash: "6".repeat(64) };
+  });
   const app = createApi({
     vault: {
       name: "Test Kasası",
@@ -45,6 +49,7 @@ function api(overrides: { readVault?: () => Promise<VaultSnapshot> } = {}) {
       readVault: overrides.readVault ?? (async () => SNAPSHOT),
       buildTransaction,
       submit: async () => ({ hash: "8".repeat(64) }),
+      join,
     },
     anchor: createAnchorClient(
       { KASA_MODE: "simulation", ANCHOR_HOME_DOMAIN: "localhost:8788" },
@@ -61,7 +66,7 @@ function api(overrides: { readVault?: () => Promise<VaultSnapshot> } = {}) {
     }),
     wait: async () => undefined,
   });
-  return { app, submit, buildTransaction };
+  return { app, submit, buildTransaction, join };
 }
 
 async function post(app: ReturnType<typeof api>["app"], path: string, body: unknown, token?: string) {
@@ -142,6 +147,20 @@ describe("Kasa API", () => {
 
     const info = await (await app.request("/api/anchor/info")).json() as Record<string, unknown>;
     expect(info).toMatchObject({ rate: "50.0000000", trustlineRequired: true, assetIssuer: issuer.publicKey() });
+  });
+
+  it("kasa: davet ucu yeni cüzdanı üye yapar, ikinci çağrıda tekrar eklemez", async () => {
+    const { app, join } = api();
+    const guest = Keypair.random().publicKey();
+
+    const first = await post(app, "/api/vault/join", { account: guest });
+    expect(first.status).toBe(200);
+    expect(await first.json()).toEqual({ funded: true, added: true, hash: "6".repeat(64) });
+    expect(join).toHaveBeenCalledWith(guest);
+
+    const bad = await post(app, "/api/vault/join", { account: "BOZUK" });
+    expect(bad.status).toBe(400);
+    expect(await bad.json()).toMatchObject({ error: expect.stringContaining("adres") });
   });
 
   it("defindex: özet bigint'leri metin verir; başkasının imzalı işlemi submit'ten geçmez", async () => {

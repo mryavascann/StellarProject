@@ -4,6 +4,7 @@ import { BRAND, explorerUrl } from "@kasa/core";
 import Link from "next/link";
 
 import { DEFINDEX, VAULT_INIT } from "../../../../config/simulation";
+import { JoinCard } from "@/components/JoinCard";
 import { RequestCard } from "@/components/RequestCard";
 import { RequireSession } from "@/components/RequireSession";
 import { Card, EmptyState, ErrorState, Skeleton } from "@/components/ui";
@@ -27,6 +28,7 @@ function Home({ address }: { address: string }) {
   }
 
   const { vault, sharePrice, rate } = data;
+  const isMember = vault.members.some((member) => member.address === address);
   const balance = BigInt(vault.balance);
   const balanceFiat = sharesToFiat(balance, sharePrice, rate);
   const gain = yieldFiat(balance, sharePrice, rate, DEFINDEX.initialSharePrice);
@@ -40,6 +42,8 @@ function Home({ address }: { address: string }) {
         <h1 className="title">{vault.name}</h1>
         <span className="sm muted">{memberLabel(vault.labels, address)}</span>
       </header>
+
+      {isMember ? null : <JoinCard address={address} onJoined={reload} />}
 
       <Card>
         {balance === 0n ? (

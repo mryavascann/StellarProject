@@ -1,3 +1,5 @@
+import { Keypair, Networks, Transaction, TransactionBuilder } from "@stellar/stellar-sdk";
+
 import { NETWORK, SEED } from "../../../config/simulation";
 import { createHorizonGateway } from "./anchor/classic";
 import { createAnchorClient, type AnchorClient } from "./anchor/client";
@@ -5,6 +7,7 @@ import { createApi } from "./app";
 import { createDefindexAdapter } from "./defindex/client";
 import type { Environment } from "./env";
 import { buildVaultTransaction, createVaultRpc, readVaultSnapshot, submitVaultTransaction } from "./stellar-vault";
+import { createVaultJoiner } from "./vault-join";
 
 export interface RuntimeDependencies {
   readonly anchor?: AnchorClient;
@@ -37,6 +40,31 @@ export function createRuntimeApi(environment: Environment, dependencies: Runtime
     if (address && seeded) labels[address] = seeded.name;
   });
 
+  /**
+   * Davet akışı: hesabı friendbot ile açar, `add_member`'ı ADMIN adına imzalayıp gönderir.
+   * Kontrat değişmiyor; imzayı sunucudaki admin anahtarı atıyor (bkz. K-016).
+   */
+  const join = createVaultJoiner({
+    adminSecret: environment.ADMIN_SECRET,
+    members: async () => (await readVaultSnapshot(vaultOptions(adminPublic), rpc)).members.map((member) => member.address),
+    accountExists: async (account) => (await fetch(`${NETWORK.horizonUrl}/accounts/${account}`)).ok,
+    fund: async (account) => {
+      const response = await fetch(`${NETWORK.friendbotUrl}?addr=${account}`);
+      if (!response.ok) throw new Error(`Test hesabı açılamadı: friendbot HTTP ${response.status}`);
+    },
+    addMember: async (account) => {
+      const admin = Keypair.fromSecret(required(environment, "ADMIN_SECRET"));
+      const xdr = await buildVaultTransaction(vaultOptions(admin.publicKey()), rpc, {
+        function: "add_member",
+        caller: admin.publicKey(),
+        newMember: account,
+      });
+      const transaction = TransactionBuilder.fromXDR(xdr, Networks.TESTNET) as Transaction;
+      transaction.sign(admin);
+      return submitVaultTransaction(vaultOptions(admin.publicKey()), rpc, transaction.toXDR());
+    },
+  });
+
   return createApi({
     vault: {
       name: SEED.vaultName,
@@ -45,6 +73,7 @@ export function createRuntimeApi(environment: Environment, dependencies: Runtime
       readVault: () => readVaultSnapshot(vaultOptions(adminPublic), rpc),
       buildTransaction: (account, call) => buildVaultTransaction(vaultOptions(account), rpc, call),
       submit: (signedXdr) => submitVaultTransaction(vaultOptions(adminPublic), rpc, signedXdr),
+      join,
     },
     anchor: dependencies.anchor ?? createAnchorClient(environment),
     classic: { gateway: createHorizonGateway(NETWORK.horizonUrl), networkPassphrase: NETWORK.networkPassphrase },

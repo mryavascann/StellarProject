@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 
 import type { VaultCall, VaultSnapshot } from "../stellar-vault";
+import type { JoinResult } from "../vault-join";
 import { json, requireStroops, requireText } from "./respond";
 
 export interface VaultRouteDependencies {
@@ -11,6 +12,8 @@ export interface VaultRouteDependencies {
   readVault(): Promise<VaultSnapshot>;
   buildTransaction(account: string, call: VaultCall): Promise<string>;
   submit(signedXdr: string): Promise<{ hash: string }>;
+  /** Davetle katılma; sunucuda admin anahtarı yoksa çağrı anlaşılır hatayla döner. */
+  join(account: string): Promise<JoinResult>;
 }
 
 const FUNCTIONS = ["add_member", "remove_member", "deposit", "request_spend", "approve", "execute", "cancel", "emergency_exit"] as const;
@@ -69,6 +72,12 @@ export function vaultRoutes(dependencies: VaultRouteDependencies) {
   app.post("/submit", async (context) => {
     const body = await context.req.json<Record<string, unknown>>();
     return json(context, await dependencies.submit(requireText(body, "signedXdr")));
+  });
+
+  /** Davet: cüzdan adresi gelir, gerekiyorsa hesap açılır ve kasaya üye yapılır. */
+  app.post("/join", async (context) => {
+    const body = await context.req.json<Record<string, unknown>>();
+    return json(context, await dependencies.join(requireText(body, "account")));
   });
 
   return app;
