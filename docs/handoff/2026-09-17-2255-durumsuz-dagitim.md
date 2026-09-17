@@ -46,6 +46,14 @@ Kullanıcı canlı siteyi elle denedi, iki hata çıktı; ikisi de test-first d�
    bir tarayıcı eklentisi istiyor → testnet'te imzalatılamaz. Listeden çıkarıldı.
 Test sayısı 245 → **252**.
 
+## Canlı kullanım sonrası eklenenler (23:46)
+- Popup iki aşamalı oldu: pencere tıklama anında boş açılır, anchor adresi gelince yollanır.
+  Engellenirse `BRAND.messages.popupBlocked` ne yapılacağını söyler.
+- Zincirde olmayan hesap için `AccountNotFoundError` → 400 + "önce hesabı test parasıyla aç".
+- Davetle katılma (K-016): `POST /api/vault/join` + web'de "Kasaya katıl" kartı.
+  **Çalışması için `ADMIN_SECRET` Vercel'e eklenmeli**; eklenene kadar uç sebebini söyler.
+- Test sayısı 252 → **264**.
+
 ## Yapmadım / neden
 - Düzeltme sonrası tam akış (yatır → talep → onay → çek) elle tekrar denenmedi.
 - `pnpm test:live` koşmadı; `.env.live` değerleri henüz yok (uydurulmadı).

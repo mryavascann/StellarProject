@@ -1,6 +1,6 @@
 # PROJE DURUMU
 
-Son güncelleme: 2026-09-17 23:20 · Ajan: claude-durumsuz-dagitim · Mod: **simulation**
+Son güncelleme: 2026-09-17 23:46 · Ajan: claude-durumsuz-dagitim · Mod: **simulation**
 
 ## Faz
 Şu an: **Faz S3 tamamlandı** — simülasyonda tam döngü testnet'te çalışıyor, tam yığın Vercel'de yayında.
@@ -33,6 +33,12 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (`docs/faz0-can
       zincirde olmayan hesap için `/api/defindex/overview` artık `shares: 0` ile **200** dönüyor
       (önce 503 → ana ekran komple düşüyordu); getiri özeti ayrıca en-iyi-çaba oldu.
       LOBSTR cüzdan listesinden çıkarıldı: modülü `networkPassphrase`'i yok sayıyor, testnet'te imzalatılamıyor.
+- [x] **Kullanıcı canlıda tam akışı denedi ve çalıştı** (yatır → getiri → kasaya kilitle).
+      Çıkan iki pürüz düzeltildi: banka ekranı popup'ı artık **tıklama anında** açılıyor
+      (engellenirse ne yapılacağını söylüyor), zincirde olmayan hesap net mesaj alıyor.
+- [x] **Davetle katılma** (K-016): `POST /api/vault/join` → hesabı friendbot ile açar,
+      `add_member`'ı sunucudaki admin anahtarıyla imzalar. Web'de "Kasaya katıl" kartı.
+      Canlıda uç çalışıyor ve `ADMIN_SECRET` tanımlı olmadığını **açıkça söylüyor**.
 - [x] `pnpm typecheck` temiz.
 
 ## Kırık / eksik
@@ -44,8 +50,8 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (`docs/faz0-can
 - [ ] Canlı `getVaultInfo` pay fiyatı vermez → web bakiye/pay oranından türetir; canlıda doğrulanacak.
 
 ## Test durumu
-- Kontrat **30/30** · Core **49/49** · Scripts **13/13** · Mock anchor **22/22** · API **95/95** · Web **43/43**
-- Toplam **252/252 yeşil** · Uçtan uca **1/1** (bugün testnet'te iki kez) · `pnpm typecheck` temiz
+- Kontrat **30/30** · Core **49/49** · Scripts **13/13** · Mock anchor **22/22** · API **104/104** · Web **46/46**
+- Toplam **264/264 yeşil** · Uçtan uca **1/1** (bugün testnet'te iki kez) · `pnpm typecheck` temiz
 
 ## Ortam
 - node 24.19 · pnpm 11.22 · stellar CLI 28 · rustc 1.98 GNU · TypeScript 5.9
@@ -55,6 +61,8 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (`docs/faz0-can
   (`apps/web/src/app/api/[[...route]]/route.ts` → `@kasa/api/vercel`).
 
 ## Sıradaki iş (öncelik sırasıyla)
+0. **Karar bekliyor:** `ADMIN_SECRET` Vercel'e eklenecek mi? Eklenmeden "Kasaya katıl" çalışmaz
+   (uç kapalı olduğunu söylüyor). Bedeli K-016'da yazılı: sunucu admin yetkisi kazanır.
 1. https://stellar-kasa.vercel.app/giris → test hesabıyla gir, tam akışı elle dene
    (yatır → talep → onay → çek). Hata çıkarsa footer'daki "Geliştirici modu" kutusu ham hatayı gösterir.
 2. Etkinlik Faz 0: `docs/faz0-canli-gecis.md` adım adım uygulanır → GO/NO-GO raporu.
@@ -70,6 +78,10 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (`docs/faz0-can
 - **Kişiye özel okuma, herkese ait ekranı düşürmemeli.** Zincirde olmayan hesap hata değil,
   sıfır bakiyedir; `Promise.all` içindeki isteğe bağlı çağrı tüm ekranı kırıyordu.
 - LOBSTR modülü `networkPassphrase`'i kaynak kodunda atlıyor → testnet imzası mümkün değil.
+- **Popup yalnız tıklama anında açılır.** Ağ çağrılarından sonra `window.open` çağırmak
+  tarayıcıda engellenir; pencere boş açılıp adres sonradan yollanmalı.
+- Stellar'da hesabın var olması için minimum XLM gerekir; testnet'te friendbot açar.
+  Kasaya para yatırmak ayrıca **üyelik** ister (kontrat üye olmayanı reddeder).
 - `pnpm test:deploy` yalnız 200 kontrolü değil; dağıtılmış JS paketini indirip API adresini
   denetler. HTTP smoke testi bunu yakalamaz.
 - **RPC `scValToNative` birim enum'u `["Pending"]` dizisi verir**, CLI JSON `"Pending"` verir; core ikisini de kabul eder.
