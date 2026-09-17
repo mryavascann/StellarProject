@@ -14,6 +14,7 @@
     "test:ts": "pnpm -r --if-present test",
     "test:contract": "node scripts/run-cargo.mjs test --manifest-path contracts/shared-vault/Cargo.toml --lib",
     "test:live": "cross-env KASA_MODE=live pnpm -r --if-present test:live",
+    "test:deploy": "pnpm --filter @kasa/api test:deploy",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "dev": "pnpm -r --parallel --if-present dev",
     "sim": "pnpm --filter @kasa/mock-anchor dev",

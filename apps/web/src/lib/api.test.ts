@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, api, withAnchorSession } from "./api";
+import { ApiError, api, authenticateAnchor, clearAnchorToken, withAnchorSession } from "./api";
 import type { Signer } from "./signer";
 
 const signer: Signer = { kind: "key", address: "GACCOUNT", sign: vi.fn(async (xdr: string) => `signed:${xdr}`) };
@@ -14,7 +14,10 @@ function mockFetch(handler: (url: string, init?: RequestInit) => { status?: numb
   return fetcher;
 }
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  clearAnchorToken();
+});
 
 describe("API istemcisi", () => {
   it("hata gövdesindeki Türkçe mesajı ApiError olarak yükseltir", async () => {
@@ -29,7 +32,7 @@ describe("API istemcisi", () => {
       if (url.endsWith("/api/anchor/token")) {
         authenticated = true;
         expect(JSON.parse(String(init?.body))).toEqual({ account: "GACCOUNT", signedTransaction: "signed:CHALLENGE" });
-        return { body: { ok: true } };
+        return { body: { token: "JWT-YENI", expiresAt: Date.now() + 900_000 } };
       }
       if (url.endsWith("/api/anchor/deposit")) {
         return authenticated ? { body: { id: "1", url: "u", amountAsset: "20.0000000", quoteExpiresAt: "x" } } : { status: 401, body: { error: "auth_required" } };
@@ -41,6 +44,36 @@ describe("API istemcisi", () => {
     expect(result.id).toBe("1");
     expect(signer.sign).toHaveBeenCalledWith("CHALLENGE");
     expect(fetcher.mock.calls.filter(([url]) => String(url).endsWith("/api/anchor/deposit"))).toHaveLength(2);
+  });
+
+
+  it("anchor JWT'sini tarayıcıda tutar ve sonraki anchor isteklerinde Bearer olarak gönderir", async () => {
+    const fetcher = mockFetch((url) => {
+      if (url.endsWith("/api/anchor/challenge")) return { body: { transaction: "CHALLENGE" } };
+      if (url.endsWith("/api/anchor/token")) return { body: { token: "JWT123", expiresAt: Date.now() + 900_000 } };
+      if (url.endsWith("/api/anchor/deposit")) return { body: { id: "1", url: "u", amountAsset: "20.0000000", quoteExpiresAt: "x" } };
+      throw new Error(`beklenmeyen istek: ${url}`);
+    });
+
+    await authenticateAnchor(signer);
+    await api.anchorDeposit("GACCOUNT", "1000.00");
+
+    const depositCall = fetcher.mock.calls.find(([url]) => String(url).endsWith("/api/anchor/deposit"));
+    expect(new Headers(depositCall?.[1]?.headers).get("authorization")).toBe("Bearer JWT123");
+  });
+
+  it("kasa uçlarına anchor JWT'si gönderilmez", async () => {
+    const fetcher = mockFetch((url) => {
+      if (url.endsWith("/api/anchor/challenge")) return { body: { transaction: "CHALLENGE" } };
+      if (url.endsWith("/api/anchor/token")) return { body: { token: "JWT123", expiresAt: Date.now() + 900_000 } };
+      return { body: { name: "Kasa" } };
+    });
+
+    await authenticateAnchor(signer);
+    await api.vault();
+
+    const vaultCall = fetcher.mock.calls.find(([url]) => String(url).endsWith("/api/vault"));
+    expect(new Headers(vaultCall?.[1]?.headers).get("authorization")).toBeNull();
   });
 
   it("auth dışı hataları tekrarlamadan yükseltir", async () => {

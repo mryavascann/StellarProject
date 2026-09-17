@@ -3,7 +3,8 @@ import { Hono } from "hono";
 
 import { ANCHOR } from "../../../config/simulation";
 import { buildChallenge, issueToken, verifyChallenge, verifyToken } from "./auth";
-import type { MockAnchorChain } from "./chain";
+import { decodeSigned, encodeSigned, payoutMemo, type QuotePayload, type TransferPayload } from "./ids";
+import type { MockAnchorChain, ObservedPayment } from "./chain";
 import { registerSep38 } from "./sep38";
 
 export { createHorizonAnchorChain, createMemoryAnchorChain, type MockAnchorChain, type ObservedPayment } from "./chain";
@@ -16,17 +17,6 @@ export interface MockAnchorOptions {
   readonly now?: () => Date;
   readonly homeDomain?: string;
   readonly publicOrigin?: string;
-}
-
-interface MockTransaction {
-  readonly createdAt: number;
-  readonly kind: "deposit" | "withdraw";
-  readonly account: string;
-  readonly amount: string;
-  readonly memo?: string;
-  memoMatched?: boolean;
-  matchedAt?: number;
-  payoutHash?: string;
 }
 
 type Variables = { account: string };
@@ -54,8 +44,6 @@ export function createMockAnchor(options: MockAnchorOptions) {
   const homeDomain = options.homeDomain ?? ANCHOR.homeDomain;
   const origin = (options.publicOrigin ?? `http://${homeDomain}`).replace(/\/$/u, "");
   const webAuthDomain = new URL(origin).host;
-  const transactions = new Map<string, MockTransaction>();
-  const quotes = new Map<string, number>();
   const stepMs = ANCHOR.stateStepSeconds * 1000;
 
   app.get("/.well-known/stellar.toml", (context) => {
@@ -135,23 +123,29 @@ export function createMockAnchor(options: MockAnchorOptions) {
   app.post("/sep24/transactions/deposit/interactive", async (context) => {
     const body = await context.req.json<Record<string, unknown>>();
     if (!sevenDecimalAmount(body.amount)) return context.json({ error: "amount 7 ondalıklı metin olmalı" }, 400);
-    if (typeof body.quote_id === "string" && (quotes.get(body.quote_id) ?? 0) <= now().getTime()) {
-      return context.json({ error: "quote süresi doldu" }, 400);
+    if (typeof body.quote_id === "string") {
+      const quote = await decodeSigned<QuotePayload>(body.quote_id, options.signingSecret);
+      if (!quote || quote.expiresAt <= now().getTime()) return context.json({ error: "quote süresi doldu" }, 400);
     }
-    const id = crypto.randomUUID();
-    transactions.set(id, { createdAt: now().getTime(), kind: "deposit", account: context.get("account"), amount: body.amount });
-    return context.json({ id, url: `${origin}/interactive/${id}?kind=deposit` });
+    const id = await encodeSigned<TransferPayload>(
+      { kind: "deposit", account: context.get("account"), amount: body.amount, createdAt: now().getTime() },
+      options.signingSecret,
+    );
+    return context.json({ id, url: `${origin}/interactive/${encodeURIComponent(id)}?kind=deposit` });
   });
 
   app.post("/sep24/transactions/withdraw/interactive", async (context) => {
     const body = await context.req.json<Record<string, unknown>>();
     if (!sevenDecimalAmount(body.amount)) return context.json({ error: "amount 7 ondalıklı metin olmalı" }, 400);
-    const id = crypto.randomUUID();
-    const memo = BigInt(`0x${id.replaceAll("-", "").slice(0, 15)}`).toString();
-    transactions.set(id, { createdAt: now().getTime(), kind: "withdraw", account: context.get("account"), amount: body.amount, memo });
+    // Memo önce üretilir ve imzalı kimliğin İÇİNE yazılır; böylece her sunucu örneği aynı memo'yu bilir.
+    const memo = BigInt(`0x${crypto.randomUUID().replaceAll("-", "").slice(0, 15)}`).toString();
+    const id = await encodeSigned<TransferPayload>(
+      { kind: "withdraw", account: context.get("account"), amount: body.amount, memo, createdAt: now().getTime() },
+      options.signingSecret,
+    );
     return context.json({
       id,
-      url: `${origin}/interactive/${id}?kind=withdraw`,
+      url: `${origin}/interactive/${encodeURIComponent(id)}?kind=withdraw`,
       account_id: options.custodialPublic,
       memo,
       memo_type: "id",
@@ -166,30 +160,50 @@ export function createMockAnchor(options: MockAnchorOptions) {
     ),
   );
 
-  /** Deposit: adımlar zamanla ilerler; son adımda trustline yoksa `pending_trust`, varsa gerçek ödeme bir kez yapılır. */
-  async function depositStatus(id: string, transaction: MockTransaction) {
-    const index = Math.min(Math.floor((now().getTime() - transaction.createdAt) / stepMs), DEPOSIT_STATES.length - 1);
-    if (index < DEPOSIT_STATES.length - 1) return { id, kind: transaction.kind, status: DEPOSIT_STATES[index] };
-    if (!transaction.payoutHash) {
-      if (!(await options.chain.hasTrustline(transaction.account))) {
-        return { id, kind: transaction.kind, status: "pending_trust" };
-      }
-      transaction.payoutHash = (await options.chain.payAsset(transaction.account, transaction.amount)).hash;
+  /**
+   * Deposit: adımlar zamanla ilerler; son adımda trustline yoksa `pending_trust`.
+   * Ödemenin bir kez yapılması bellekte değil ZİNCİRDE tutulur: anchor kendi ödemesine
+   * işleme özel bir etiket koyar ve ödemeden önce o etiketi zincirde arar. Böylece iki
+   * sunucu örneği aynı anda son adıma gelse bile ikinci ödeme yapılmaz.
+   */
+  async function depositStatus(id: string, transfer: TransferPayload) {
+    const index = Math.min(Math.floor((now().getTime() - transfer.createdAt) / stepMs), DEPOSIT_STATES.length - 1);
+    if (index < DEPOSIT_STATES.length - 1) return { id, kind: transfer.kind, status: DEPOSIT_STATES[index] };
+
+    const memo = payoutMemo(id);
+    const existing = await options.chain.findPayout(transfer.account, memo);
+    if (existing) return { id, kind: transfer.kind, status: "completed", stellar_transaction_id: existing.hash };
+    if (!(await options.chain.hasTrustline(transfer.account))) {
+      return { id, kind: transfer.kind, status: "pending_trust" };
     }
-    return { id, kind: transaction.kind, status: "completed", stellar_transaction_id: transaction.payoutHash };
+    const payout = await options.chain.payAsset(transfer.account, transfer.amount, memo);
+    return { id, kind: transfer.kind, status: "completed", stellar_transaction_id: payout.hash };
   }
 
-  /** Withdraw: ödeme zincirde eşleşene kadar `pending_user_transfer_start`'ta bekler; sonra işlenir. */
-  function withdrawStatus(id: string, transaction: MockTransaction) {
-    if (transaction.memoMatched === false) {
-      return { id, kind: transaction.kind, status: "pending_external", memo_matched: false };
+  /**
+   * Withdraw: üye ödemeyi yapıp hash'ini bildirir; anchor her sorguda ZİNCİRDEN doğrular.
+   * Memo yanlışsa eşleşme olmaz ve işlem `pending_external`'da askıda kalır (A.4 davranış 5).
+   */
+  async function withdrawStatus(id: string, transfer: TransferPayload, paymentHash: string | undefined) {
+    const payment = paymentHash ? await options.chain.findPayment(paymentHash) : null;
+    if (!payment) {
+      const waiting = now().getTime() - transfer.createdAt < stepMs ? "incomplete" : "pending_user_transfer_start";
+      return { id, kind: transfer.kind, status: waiting };
     }
-    if (transaction.matchedAt === undefined) {
-      const waiting = now().getTime() - transaction.createdAt < stepMs ? "incomplete" : "pending_user_transfer_start";
-      return { id, kind: transaction.kind, status: waiting };
+    if (!matchesAnchorAsset(payment) || payment.memoType !== "id" || payment.memo !== transfer.memo) {
+      return { id, kind: transfer.kind, status: "pending_external", memo_matched: false };
     }
-    const done = now().getTime() - transaction.matchedAt >= stepMs;
-    return { id, kind: transaction.kind, status: done ? "completed" : "pending_anchor", memo_matched: true };
+    const done = now().getTime() - payment.createdAt >= stepMs;
+    return { id, kind: transfer.kind, status: done ? "completed" : "pending_anchor", memo_matched: true };
+  }
+
+  /** Ödeme gerçekten bu anchor'a ve bu varlığa mı yapılmış? */
+  function matchesAnchorAsset(payment: ObservedPayment): boolean {
+    return (
+      payment.destination === options.custodialPublic &&
+      payment.assetCode === ANCHOR.assetCode &&
+      payment.assetIssuer === options.issuerPublic
+    );
   }
 
   app.get("/sep24/transaction", async (context) => {
@@ -198,34 +212,34 @@ export function createMockAnchor(options: MockAnchorOptions) {
       return context.json({ id: context.req.query("id"), status: simulated });
     }
     const id = context.req.query("id") ?? "";
-    const transaction = transactions.get(id);
-    if (!transaction) return context.json({ error: "işlem bulunamadı" }, 404);
-    return context.json(transaction.kind === "deposit" ? await depositStatus(id, transaction) : withdrawStatus(id, transaction));
+    const transfer = await decodeSigned<TransferPayload>(id, options.signingSecret);
+    if (!transfer) return context.json({ error: "işlem bulunamadı" }, 404);
+    return context.json(
+      transfer.kind === "deposit"
+        ? await depositStatus(id, transfer)
+        : await withdrawStatus(id, transfer, context.req.query("payment_hash")),
+    );
   });
 
   /**
    * Anchor'ın zincir izleyicisi: bildirilen tx hash'i Horizon'dan okunur, hedef/varlık/memo
-   * birebir karşılaştırılır. Yanlış memo = eşleşmez ve para askıda kalır (A.4 davranış 5).
+   * birebir karşılaştırılır. Kayıt tutmaz; durum sorgusu aynı doğrulamayı yeniden yapar.
    */
   app.post("/mock/payments", async (context) => {
     const body = await context.req.json<{ id?: string; tx_hash?: string }>();
-    const transaction = body.id ? transactions.get(body.id) : undefined;
-    if (!transaction || transaction.kind !== "withdraw") return context.json({ error: "çekim işlemi bulunamadı" }, 404);
+    const transfer = body.id ? await decodeSigned<TransferPayload>(body.id, options.signingSecret) : null;
+    if (!transfer || transfer.kind !== "withdraw") return context.json({ error: "çekim işlemi bulunamadı" }, 404);
     const payment = body.tx_hash ? await options.chain.findPayment(body.tx_hash) : null;
     if (!payment) return context.json({ error: "ödeme zincirde bulunamadı" }, 404);
-    if (
-      payment.destination !== options.custodialPublic ||
-      payment.assetCode !== ANCHOR.assetCode ||
-      payment.assetIssuer !== options.issuerPublic
-    ) {
+    if (!matchesAnchorAsset(payment)) {
       return context.json({ error: "ödeme bu anchor'a veya bu varlığa yapılmamış" }, 422);
     }
-    transaction.memoMatched = payment.memoType === "id" && payment.memo === transaction.memo;
-    if (!transaction.memoMatched) return context.json({ error: "memo eşleşmedi", status: "pending_external" }, 422);
-    transaction.matchedAt = now().getTime();
+    if (payment.memoType !== "id" || payment.memo !== transfer.memo) {
+      return context.json({ error: "memo eşleşmedi", status: "pending_external" }, 422);
+    }
     return context.json({ matched: true });
   });
 
-  registerSep38(app as unknown as Hono, options.issuerPublic, quotes, now);
+  registerSep38(app as unknown as Hono, options.issuerPublic, options.signingSecret, now);
   return app;
 }

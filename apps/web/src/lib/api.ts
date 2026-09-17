@@ -87,8 +87,28 @@ export interface WithdrawalPaymentView {
 export type AnchorStatusView = { readonly status: string } & StatusText;
 export type TransferDirection = "deposit" | "withdraw";
 
+/**
+ * Anchor JWT'si tarayıcıda durur. Neden: API birden çok sunucu örneğinde koşar ve orada
+ * tutulan oturum örnekler arasında kaybolur; kaybolan her oturum kullanıcıya fazladan bir
+ * cüzdan imzası olarak geri döner. Sayfa yenilenirse token gider, 401 → SEP-10 tekrarı devreye girer.
+ */
+let anchorToken: string | null = null;
+
+/** Testler ve çıkış için: tarayıcıdaki anchor oturumunu düşürür. */
+export function clearAnchorToken(): void {
+  anchorToken = null;
+}
+
+/** Anchor uçlarına JWT ekler; kasa ve DeFindex uçları anchor oturumu istemez. */
+function withAnchorToken(path: string, init?: RequestInit): RequestInit | undefined {
+  if (!anchorToken || !path.startsWith("/api/anchor/")) return init;
+  const headers = new Headers(init?.headers);
+  headers.set("authorization", `Bearer ${anchorToken}`);
+  return { ...init, headers };
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, init);
+  const response = await fetch(`${API_URL}${path}`, withAnchorToken(path, init));
   const body = (await response.json().catch(() => ({}))) as { error?: unknown };
   if (!response.ok) {
     const message = typeof body.error === "string" ? body.error : `HTTP ${response.status}`;
@@ -109,7 +129,8 @@ export const api = {
 
   anchorInfo: () => request<AnchorInfoView>("/api/anchor/info"),
   anchorChallenge: (account: string) => request<{ transaction: string }>("/api/anchor/challenge", post({ account })),
-  anchorToken: (account: string, signedTransaction: string) => request<{ ok: true }>("/api/anchor/token", post({ account, signedTransaction })),
+  anchorToken: (account: string, signedTransaction: string) =>
+    request<{ token: string; expiresAt: number }>("/api/anchor/token", post({ account, signedTransaction })),
   anchorTrustline: (account: string) => request<{ exists: boolean }>(`/api/anchor/trustline?account=${encodeURIComponent(account)}`),
   anchorTrustlineTx: (account: string) => request<{ xdr: string }>("/api/anchor/trustline/tx", post({ account })),
   anchorDeposit: (account: string, amountFiat: string) =>
@@ -118,8 +139,11 @@ export const api = {
     request<{ id: string; url: string; memo: string; payment: WithdrawalPaymentView }>("/api/anchor/withdraw", post({ account, amountAsset })),
   anchorPaymentTx: (account: string, payment: WithdrawalPaymentView) => request<{ xdr: string }>("/api/anchor/payment/tx", post({ account, ...payment })),
   anchorClassicSubmit: (signedXdr: string) => request<{ hash: string }>("/api/anchor/classic/submit", post({ signedXdr })),
-  anchorTransaction: (account: string, id: string, direction: TransferDirection) =>
-    request<AnchorStatusView>(`/api/anchor/transaction?account=${encodeURIComponent(account)}&id=${encodeURIComponent(id)}&direction=${direction}`),
+  anchorTransaction: (account: string, id: string, direction: TransferDirection, paymentHash?: string) =>
+    request<AnchorStatusView>(
+      `/api/anchor/transaction?account=${encodeURIComponent(account)}&id=${encodeURIComponent(id)}&direction=${direction}` +
+        (paymentHash ? `&paymentHash=${encodeURIComponent(paymentHash)}` : ""),
+    ),
   anchorPaymentReport: (id: string, memo: string, txHash: string) => request<{ ok: true }>("/api/anchor/payment", post({ id, memo, txHash })),
 
   defindexOverview: (account: string) => request<OverviewView>(`/api/defindex/overview?account=${encodeURIComponent(account)}`),
@@ -131,7 +155,8 @@ export const api = {
 /** SEP-10'u cüzdanla yapar: challenge → imza → JWT. Kullanıcı bunu bir "giriş" olarak görmez. */
 export async function authenticateAnchor(signer: Signer): Promise<void> {
   const { transaction } = await api.anchorChallenge(signer.address);
-  await api.anchorToken(signer.address, await signer.sign(transaction));
+  const session = await api.anchorToken(signer.address, await signer.sign(transaction));
+  anchorToken = session.token;
 }
 
 /**

@@ -8,8 +8,6 @@ export interface AnchorMetadata {
   readonly assetIssuer: string;
 }
 
-export type JwtProvider = (forceRefresh: boolean) => Promise<string>;
-
 export interface WithdrawalResponse {
   readonly account_id?: unknown;
   readonly memo?: unknown;

@@ -1,26 +1,4 @@
-import type { JwtProvider, WithdrawalPayment, WithdrawalResponse } from "./types";
-
-type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
-
-function withToken(init: RequestInit, token: string): RequestInit {
-  const headers = new Headers(init.headers);
-  headers.set("authorization", `Bearer ${token}`);
-  return { ...init, headers };
-}
-
-/** 401 alınca SEP-10 JWT'yi bir kez yeniler ve aynı isteği şeffaf biçimde tekrarlar. */
-export async function requestWithFreshJwt(
-  url: string,
-  init: RequestInit,
-  tokenProvider: JwtProvider,
-  fetcher: Fetcher = fetch,
-): Promise<Response> {
-  let response = await fetcher(url, withToken(init, await tokenProvider(false)));
-  if (response.status === 401) {
-    response = await fetcher(url, withToken(init, await tokenProvider(true)));
-  }
-  return response;
-}
+import type { WithdrawalPayment, WithdrawalResponse } from "./types";
 
 /** Anchor çekim yanıtını klasik ödemeye dönüştürür; memo alanlarını değiştirmez. */
 export function buildWithdrawalPayment(

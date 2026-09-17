@@ -33,11 +33,16 @@ export async function pollAnchorStatus(
   id: string,
   direction: "deposit" | "withdraw",
   onStatus: (status: AnchorStatusView) => void,
-  options: { readonly poll?: number | undefined; readonly until?: (status: AnchorStatusView) => boolean } = {},
+  options: {
+    readonly poll?: number | undefined;
+    readonly until?: (status: AnchorStatusView) => boolean;
+    /** Çekimde üyenin yaptığı ödemenin hash'i; anchor durumu bundan doğrular. */
+    readonly paymentHash?: string;
+  } = {},
 ): Promise<AnchorStatusView> {
   const done = options.until ?? ((status) => FINAL.has(status.status));
   for (;;) {
-    const status = await api.anchorTransaction(account, id, direction);
+    const status = await api.anchorTransaction(account, id, direction, options.paymentHash);
     onStatus(status);
     if (done(status)) return status;
     await sleep(options.poll ?? STATUS_POLL_MS);
@@ -132,7 +137,10 @@ export async function withdrawFlow(run: WithdrawRun): Promise<{ paymentHash: str
   const { xdr } = await api.anchorPaymentTx(signer.address, started.payment);
   const { hash } = await api.anchorClassicSubmit(await signer.sign(xdr));
   await api.anchorPaymentReport(started.id, started.payment.memo, hash);
-  const finalStatus = await pollAnchorStatus(signer.address, started.id, "withdraw", run.onStatus, { poll: run.pollMs });
+  const finalStatus = await pollAnchorStatus(signer.address, started.id, "withdraw", run.onStatus, {
+    poll: run.pollMs,
+    paymentHash: hash,
+  });
   if (finalStatus.status !== "completed") throw new Error(finalStatus.description);
   report("banka", "done");
   return { paymentHash: hash };

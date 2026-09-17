@@ -64,16 +64,23 @@ function api(overrides: { readVault?: () => Promise<VaultSnapshot> } = {}) {
   return { app, submit, buildTransaction };
 }
 
-async function post(app: ReturnType<typeof api>["app"], path: string, body: unknown) {
-  return app.request(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+async function post(app: ReturnType<typeof api>["app"], path: string, body: unknown, token?: string) {
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  if (token) headers.authorization = `Bearer ${token}`;
+  return app.request(path, { method: "POST", headers, body: JSON.stringify(body) });
 }
 
-async function login(app: ReturnType<typeof api>["app"]) {
+/** SEP-10'u tamamlar ve JWT'yi döndürür: oturumu API değil, tarayıcı taşır. */
+async function login(app: ReturnType<typeof api>["app"]): Promise<string> {
   const challenge = await (await post(app, "/api/anchor/challenge", { account: member.publicKey() })).json() as { transaction: string };
   const transaction = TransactionBuilder.fromXDR(challenge.transaction, Networks.TESTNET) as Transaction;
   transaction.sign(member);
-  const token = await post(app, "/api/anchor/token", { account: member.publicKey(), signedTransaction: transaction.toXDR() });
-  expect(token.status).toBe(200);
+  const response = await post(app, "/api/anchor/token", { account: member.publicKey(), signedTransaction: transaction.toXDR() });
+  expect(response.status).toBe(200);
+  const session = await response.json() as { token: string; expiresAt: number };
+  expect(session.token.split(".")).toHaveLength(3);
+  expect(session.expiresAt).toBeGreaterThan(Date.now());
+  return session.token;
 }
 
 describe("Kasa API", () => {
@@ -110,25 +117,27 @@ describe("Kasa API", () => {
     expect(await bad.json()).toMatchObject({ error: expect.stringContaining("stroop") });
   });
 
-  it("anchor: oturum yokken deposit 401 auth_required; giriş sonrası popup URL'i ve USDC tutarı döner", async () => {
+  it("anchor: JWT'siz deposit 401 auth_required; JWT ile popup URL'i ve USDC tutarı döner", async () => {
     const { app } = api();
     const denied = await post(app, "/api/anchor/deposit", { account: member.publicKey(), amountFiat: "1000.00" });
     expect(denied.status).toBe(401);
     expect(await denied.json()).toEqual({ error: "auth_required" });
 
-    await login(app);
-    const started = await post(app, "/api/anchor/deposit", { account: member.publicKey(), amountFiat: "1000.00" });
+    const token = await login(app);
+    const started = await post(app, "/api/anchor/deposit", { account: member.publicKey(), amountFiat: "1000.00" }, token);
     expect(started.status).toBe(200);
     expect(await started.json()).toMatchObject({ url: expect.stringContaining("kind=deposit"), amountAsset: "20.0000000" });
   });
 
   it("anchor: durum ucu marka metnine eşler, info ucu kur ve limitleri metin verir", async () => {
     const { app } = api();
-    await login(app);
-    const started = await (await post(app, "/api/anchor/withdraw", { account: member.publicKey(), amountAsset: "15.0000000" })).json() as { id: string; payment: { memo: string; memoType: string } };
+    const token = await login(app);
+    const started = await (await post(app, "/api/anchor/withdraw", { account: member.publicKey(), amountAsset: "15.0000000" }, token)).json() as { id: string; payment: { memo: string; memoType: string } };
     expect(started.payment.memoType).toBe("id");
 
-    const status = await app.request(`/api/anchor/transaction?account=${member.publicKey()}&id=${started.id}&direction=withdraw`);
+    const status = await app.request(`/api/anchor/transaction?account=${member.publicKey()}&id=${started.id}&direction=withdraw`, {
+      headers: { authorization: `Bearer ${token}` },
+    });
     expect(await status.json()).toMatchObject({ status: "incomplete", title: "Yarım kaldı" });
 
     const info = await (await app.request("/api/anchor/info")).json() as Record<string, unknown>;

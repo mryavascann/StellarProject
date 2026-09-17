@@ -1,6 +1,6 @@
 import { fetchAnchorMetadata } from "./sep1";
 import { exchangeChallenge, fetchChallenge } from "./sep10";
-import { buildWithdrawalPayment, requestWithFreshJwt } from "./sep24";
+import { buildWithdrawalPayment } from "./sep24";
 import { requestFreshQuote, type AnchorQuote } from "./sep38";
 import type { AnchorMetadata, WithdrawalPayment } from "./types";
 
@@ -43,17 +43,23 @@ export interface RawTransactionStatus {
   readonly memoMatched?: boolean;
 }
 
+/** SEP-10 sonucunda doğan oturum. API bunu SAKLAMAZ; tarayıcıya verir, tarayıcı geri gönderir. */
+export interface AnchorSession {
+  readonly token: string;
+  readonly expiresAt: number;
+}
+
 export interface AnchorClient {
   readonly mode: "simulation" | "live";
   readonly homeDomain: string;
   metadata(): Promise<AnchorMetadata>;
   info(): Promise<AnchorInfo>;
   challenge(account: string): Promise<string>;
-  exchangeToken(account: string, signedTransaction: string): Promise<void>;
-  hasSession(account: string): boolean;
-  startDeposit(account: string, amountAsset: string): Promise<InteractiveStart>;
-  startWithdraw(account: string, amountAsset: string): Promise<WithdrawalStart>;
-  transaction(account: string, id: string): Promise<RawTransactionStatus>;
+  exchangeToken(account: string, signedTransaction: string): Promise<AnchorSession>;
+  startDeposit(account: string, amountAsset: string, token: string): Promise<InteractiveStart>;
+  startWithdraw(account: string, amountAsset: string, token: string): Promise<WithdrawalStart>;
+  /** `paymentHash`: çekimde üyenin yaptığı ödeme; anchor onu zincirden doğrular (K-002). */
+  transaction(account: string, id: string, token: string, paymentHash?: string): Promise<RawTransactionStatus>;
   price(): Promise<{ rate: string }>;
   quote(sellAmountFiat: string): Promise<AnchorQuote>;
   reportWithdrawalPayment(id: string, memo: string, txHash: string): Promise<void>;
@@ -104,7 +110,7 @@ function tokenExpiry(token: string): number {
   }
 }
 
-/** Anchor ağ geçidi: SEP-1/10/24/38 ve oturum yönetimi tek yerde. */
+/** Anchor ağ geçidi: SEP-1/10/24/38 tek yerde. Durum tutmaz; JWT çağrıyla birlikte gelir. */
 export function createAnchorClient(environment: Environment, dependencies: AnchorClientDependencies = {}): AnchorClient {
   const mode = environment.KASA_MODE;
   if (mode !== "simulation" && mode !== "live") {
@@ -113,45 +119,30 @@ export function createAnchorClient(environment: Environment, dependencies: Ancho
   const homeDomain = required(environment, "ANCHOR_HOME_DOMAIN");
   const fetcher = dependencies.fetcher ?? fetch;
   const now = dependencies.now ?? (() => new Date());
-  const sessions = new Map<string, { token: string; expiresAt: number }>();
   let metadataPromise: Promise<AnchorMetadata> | undefined;
 
   const metadata = () => (metadataPromise ??= fetchAnchorMetadata(homeDomain, fetcher));
 
-  function session(account: string): string | null {
-    const entry = sessions.get(account);
-    if (!entry || entry.expiresAt <= now().getTime()) {
-      sessions.delete(account);
-      return null;
-    }
-    return entry.token;
+  /**
+   * Oturum sunucuda tutulmaz: JWT her istekte tarayıcıdan gelir. Neden: API birden çok
+   * sunucu örneğinde koşabilir (Vercel'de koşuyor) ve bellekteki oturum örnekler arasında
+   * kaybolur; kaybolan her oturum kullanıcıya yeni bir cüzdan imzası olarak geri döner.
+   * Süresi dolmuş veya boş JWT anchor'a hiç gitmez.
+   */
+  function usableToken(account: string, token: string): string {
+    if (!token || tokenExpiry(token) <= now().getTime()) throw new AnchorAuthRequiredError(account);
+    return token;
   }
 
-  /** API sunucusu imza atamaz; yenileme istendiğinde oturumu düşürür ve web'e devreder. */
-  const tokenProvider = (account: string) => async (forceRefresh: boolean) => {
-    if (forceRefresh) sessions.delete(account);
-    const token = session(account);
-    if (!token) throw new AnchorAuthRequiredError(account);
-    return token;
-  };
-
-  async function interactive(kind: "deposit" | "withdraw", account: string, amountAsset: string) {
+  async function interactive(kind: "deposit" | "withdraw", account: string, amountAsset: string, token: string) {
     if (!/^\d+\.\d{7}$/u.test(amountAsset)) throw new Error("Tutar 7 ondalıklı metin olmalı.");
     const meta = await metadata();
-    const response = await requestWithFreshJwt(
-      `${meta.transferServer}/transactions/${kind}/interactive`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ account, asset_code: meta.assetCode, asset_issuer: meta.assetIssuer, amount: amountAsset }),
-      },
-      tokenProvider(account),
-      fetcher,
-    );
-    if (response.status === 401) {
-      sessions.delete(account);
-      throw new AnchorAuthRequiredError(account);
-    }
+    const response = await fetcher(`${meta.transferServer}/transactions/${kind}/interactive`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${usableToken(account, token)}` },
+      body: JSON.stringify({ account, asset_code: meta.assetCode, asset_issuer: meta.assetIssuer, amount: amountAsset }),
+    });
+    if (response.status === 401) throw new AnchorAuthRequiredError(account);
     if (!response.ok) throw new Error(`SEP-24 ${kind} başlatılamadı: HTTP ${response.status}`);
     return response.json() as Promise<Record<string, unknown>>;
   }
@@ -180,30 +171,26 @@ export function createAnchorClient(environment: Environment, dependencies: Ancho
 
     async exchangeToken(account, signedTransaction) {
       const token = await exchangeChallenge(await metadata(), signedTransaction, fetcher);
-      sessions.set(account, { token, expiresAt: tokenExpiry(token) });
+      return { token, expiresAt: tokenExpiry(token) };
     },
 
-    hasSession(account) {
-      return session(account) !== null;
-    },
-
-    async startDeposit(account, amountAsset) {
-      const body = await interactive("deposit", account, amountAsset);
+    async startDeposit(account, amountAsset, token) {
+      const body = await interactive("deposit", account, amountAsset, token);
       if (typeof body.id !== "string" || typeof body.url !== "string") throw new Error("SEP-24 deposit yanıtı eksik.");
       return { id: body.id, url: body.url };
     },
 
-    async startWithdraw(account, amountAsset) {
-      const body = await interactive("withdraw", account, amountAsset);
+    async startWithdraw(account, amountAsset, token) {
+      const body = await interactive("withdraw", account, amountAsset, token);
       if (typeof body.id !== "string" || typeof body.url !== "string") throw new Error("SEP-24 withdraw yanıtı eksik.");
       const payment = buildWithdrawalPayment(body, amountAsset);
       return { id: body.id, url: body.url, memo: payment.memo, payment };
     },
 
-    async transaction(account, id) {
+    async transaction(account, id, token, paymentHash) {
       const meta = await metadata();
-      const token = session(account);
-      const response = await fetcher(`${meta.transferServer}/transaction?id=${encodeURIComponent(id)}`, {
+      const query = `id=${encodeURIComponent(id)}${paymentHash ? `&payment_hash=${encodeURIComponent(paymentHash)}` : ""}`;
+      const response = await fetcher(`${meta.transferServer}/transaction?${query}`, {
         headers: token ? { authorization: `Bearer ${token}` } : {},
       });
       if (!response.ok) throw new Error(`SEP-24 işlem durumu alınamadı: HTTP ${response.status}`);

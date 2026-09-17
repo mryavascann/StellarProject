@@ -1,4 +1,4 @@
-import { Asset, BASE_FEE, Horizon, Keypair, Networks, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
+import { Asset, BASE_FEE, Horizon, Keypair, Memo, Networks, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
 
 /** Zincirde görülen bir klasik ödeme — anchor'ın "havale geldi mi" sorusunun cevabı. */
 export interface ObservedPayment {
@@ -8,6 +8,8 @@ export interface ObservedPayment {
   readonly assetIssuer: string;
   readonly memo: string | null;
   readonly memoType: string | null;
+  /** Ödemenin zincire yazıldığı an (ms). Anchor'ın işleme süresi buradan sayılır. */
+  readonly createdAt: number;
 }
 
 /**
@@ -17,32 +19,39 @@ export interface ObservedPayment {
  */
 export interface MockAnchorChain {
   hasTrustline(account: string): Promise<boolean>;
-  payAsset(destination: string, amount: string): Promise<{ hash: string }>;
+  /** Ödemeye `memo` konur: aynı deposit için ikinci ödemeyi zincire bakarak engellemeyi sağlar. */
+  payAsset(destination: string, amount: string, memo: string): Promise<{ hash: string }>;
   findPayment(txHash: string): Promise<ObservedPayment | null>;
+  /** Anchor daha önce bu hesaba bu etiketle ödeme yaptı mı? Bellekte kayıt tutmadan idempotenslik. */
+  findPayout(destination: string, memo: string): Promise<{ hash: string } | null>;
 }
 
 export interface MemoryAnchorChain extends MockAnchorChain {
   grantTrustline(account: string): void;
   recordPayment(txHash: string, payment: ObservedPayment): void;
-  readonly payouts: ReadonlyArray<{ destination: string; amount: string; hash: string }>;
+  readonly payouts: ReadonlyArray<{ destination: string; amount: string; hash: string; memo: string }>;
 }
 
 /** Testler için deterministik zincir: trustline'lar ve ödemeler elle kurulur. */
 export function createMemoryAnchorChain(): MemoryAnchorChain {
   const trustlines = new Set<string>();
   const payments = new Map<string, ObservedPayment>();
-  const payouts: Array<{ destination: string; amount: string; hash: string }> = [];
+  const payouts: Array<{ destination: string; amount: string; hash: string; memo: string }> = [];
   return {
     payouts,
     grantTrustline: (account) => void trustlines.add(account),
     recordPayment: (txHash, payment) => void payments.set(txHash, payment),
     hasTrustline: async (account) => trustlines.has(account),
-    async payAsset(destination, amount) {
+    async payAsset(destination, amount, memo) {
       const hash = `mock${payouts.length}`.padEnd(64, "0");
-      payouts.push({ destination, amount, hash });
+      payouts.push({ destination, amount, hash, memo });
       return { hash };
     },
     findPayment: async (txHash) => payments.get(txHash) ?? null,
+    async findPayout(destination, memo) {
+      const found = payouts.find((payout) => payout.destination === destination && payout.memo === memo);
+      return found ? { hash: found.hash } : null;
+    },
   };
 }
 
@@ -66,10 +75,11 @@ export function createHorizonAnchorChain(options: HorizonAnchorChainOptions): Mo
           "asset_code" in balance && balance.asset_code === asset.code && balance.asset_issuer === asset.issuer,
       );
     },
-    async payAsset(destination, amount) {
+    async payAsset(destination, amount, memo) {
       const source = await server.loadAccount(issuer.publicKey());
       const transaction = new TransactionBuilder(source, { fee: BASE_FEE, networkPassphrase: Networks.TESTNET })
         .addOperation(Operation.payment({ destination, asset, amount }))
+        .addMemo(Memo.text(memo))
         .setTimeout(30)
         .build();
       transaction.sign(issuer);
@@ -93,7 +103,23 @@ export function createHorizonAnchorChain(options: HorizonAnchorChainOptions): Mo
         assetIssuer: payment.asset_issuer ?? "",
         memo: record.memo ?? null,
         memoType: record.memo_type ?? null,
+        createdAt: Date.parse(record.created_at),
       };
+    },
+    /**
+     * Anchor'ın bu hesaba yaptığı ödemeler arasında etiketi eşleşeni arar.
+     * Yalnız son işlemlere bakar: idempotenslik kontrolü ödemeden hemen önce yapılır.
+     */
+    async findPayout(destination, memo) {
+      try {
+        const page = await server.transactions().forAccount(destination).order("desc").limit(50).call();
+        const found = page.records.find(
+          (record) => record.source_account === issuer.publicKey() && record.memo === memo && record.successful,
+        );
+        return found ? { hash: found.hash } : null;
+      } catch {
+        return null;
+      }
     },
   };
 }

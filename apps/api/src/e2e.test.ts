@@ -67,10 +67,14 @@ describe.skipIf(!enabled)("uçtan uca: TL → kasa → talep → onay → execut
       defindex: createMockDefindex({ issuerSecret, chain: createHorizonVaultChain(issuerPublic) }),
     });
 
+    // Tarayıcı gibi davranır: anchor JWT'sini kendi tutar ve anchor uçlarında Bearer olarak gönderir.
+    let anchorToken = "";
     const call = async <T>(path: string, body?: unknown): Promise<T> => {
-      const response = await app.request(path, body === undefined ? undefined : {
+      const headers: Record<string, string> = {};
+      if (anchorToken && path.startsWith("/api/anchor/")) headers.authorization = `Bearer ${anchorToken}`;
+      const response = await app.request(path, body === undefined ? { headers } : {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { ...headers, "content-type": "application/json" },
         body: JSON.stringify(body),
       });
       const json = (await response.json()) as T & { error?: string };
@@ -89,7 +93,8 @@ describe.skipIf(!enabled)("uçtan uca: TL → kasa → talep → onay → execut
 
     // 1. Banka bağlantısı oturumu (SEP-10) + hesap hazırlığı (trustline).
     const { transaction: challenge } = await call<{ transaction: string }>("/api/anchor/challenge", { account: member.publicKey() });
-    await call("/api/anchor/token", { account: member.publicKey(), signedTransaction: await sign(member)(challenge) });
+    const session = await call<{ token: string }>("/api/anchor/token", { account: member.publicKey(), signedTransaction: await sign(member)(challenge) });
+    anchorToken = session.token;
     const { xdr: trustXdr } = await call<{ xdr: string }>("/api/anchor/trustline/tx", { account: member.publicKey() });
     await call("/api/anchor/classic/submit", { signedXdr: await sign(member)(trustXdr) });
     expect((await call<{ exists: boolean }>(`/api/anchor/trustline?account=${member.publicKey()}`)).exists).toBe(true);
@@ -100,7 +105,9 @@ describe.skipIf(!enabled)("uçtan uca: TL → kasa → talep → onay → execut
     let status = "";
     for (let attempt = 0; attempt < 30 && status !== "completed"; attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      status = (await call<{ status: string }>(`/api/anchor/transaction?account=${member.publicKey()}&id=${deposit.id}&direction=deposit`)).status;
+      status = (await call<{ status: string }>(
+        `/api/anchor/transaction?account=${member.publicKey()}&id=${encodeURIComponent(deposit.id)}&direction=deposit`,
+      )).status;
       expect(["incomplete", "pending_user_transfer_start", "pending_anchor", "completed"]).toContain(status);
     }
     expect(status).toBe("completed");
@@ -145,7 +152,9 @@ describe.skipIf(!enabled)("uçtan uca: TL → kasa → talep → onay → execut
     await call("/api/anchor/payment", { id: withdrawal.id, memo: withdrawal.memo, txHash: hash });
     status = "";
     for (let attempt = 0; attempt < 10 && status !== "completed"; attempt += 1) {
-      status = (await call<{ status: string }>(`/api/anchor/transaction?account=${member.publicKey()}&id=${withdrawal.id}&direction=withdraw`)).status;
+      status = (await call<{ status: string }>(
+        `/api/anchor/transaction?account=${member.publicKey()}&id=${encodeURIComponent(withdrawal.id)}&direction=withdraw&paymentHash=${hash}`,
+      )).status;
       if (status !== "completed") await new Promise((resolve) => setTimeout(resolve, 2000));
     }
     expect(status).toBe("completed");

@@ -45,13 +45,23 @@ async function interactive(instance: Instance, token: string, kind: "deposit" | 
   return { response, body: (await response.json()) as Record<string, any> };
 }
 
-async function status(instance: Instance, token: string, id: string) {
-  const response = await instance.request(`/sep24/transaction?id=${id}`, { headers: { authorization: `Bearer ${token}` } });
+async function status(instance: Instance, token: string, id: string, paymentHash?: string) {
+  const query = paymentHash ? `?id=${encodeURIComponent(id)}&payment_hash=${paymentHash}` : `?id=${encodeURIComponent(id)}`;
+  const response = await instance.request(`/sep24/transaction${query}`, { headers: { authorization: `Bearer ${token}` } });
   return (await response.json()) as Record<string, any>;
 }
 
 function payment(overrides: Partial<ObservedPayment> = {}): ObservedPayment {
-  return { destination: issuer.publicKey(), amount: "15.0000000", assetCode: "USDC", assetIssuer: issuer.publicKey(), memo: "1", memoType: "id", ...overrides };
+  return {
+    destination: issuer.publicKey(),
+    amount: "15.0000000",
+    assetCode: "USDC",
+    assetIssuer: issuer.publicKey(),
+    memo: "1",
+    memoType: "id",
+    createdAt: new Date("2026-09-11T12:00:30.000Z").getTime(),
+    ...overrides,
+  };
 }
 
 describe("mock anchor", () => {
@@ -145,7 +155,59 @@ describe("mock anchor", () => {
     const completed = await status(instance, token, body.id);
     expect(completed).toMatchObject({ status: "completed", stellar_transaction_id: chain.payouts[0]?.hash });
     await status(instance, token, body.id);
-    expect(chain.payouts).toEqual([{ destination: customer.publicKey(), amount: "10.0000000", hash: expect.any(String) }]);
+    expect(chain.payouts).toEqual([
+      { destination: customer.publicKey(), amount: "10.0000000", hash: expect.any(String), memo: expect.stringMatching(/^kasa-/u) },
+    ]);
+  });
+
+
+  it("başka bir sunucu örneği aynı işlemin durumunu okuyabilir (dağıtımda örnekler arasında kaybolmaz)", async () => {
+    let current = new Date("2026-09-11T12:00:00.000Z");
+    const chain = createMemoryAnchorChain();
+    const { instance: first } = app(() => current, chain);
+    const { instance: second } = app(() => current, chain);
+
+    const token = await authenticate(first);
+    const { body } = await interactive(first, token, "deposit", "10.0000000");
+
+    current = new Date("2026-09-11T12:00:06.100Z");
+    expect(await status(second, token, body.id)).toMatchObject({ status: "pending_anchor" });
+
+    current = new Date("2026-09-11T12:00:09.500Z");
+    chain.grantTrustline(customer.publicKey());
+    expect(await status(second, token, body.id)).toMatchObject({ status: "completed" });
+  });
+
+  it("iki sunucu örneği aynı deposit'i iki kez ödemez", async () => {
+    let current = new Date("2026-09-11T12:00:00.000Z");
+    const chain = createMemoryAnchorChain();
+    const { instance: first } = app(() => current, chain);
+    const { instance: second } = app(() => current, chain);
+    chain.grantTrustline(customer.publicKey());
+
+    const token = await authenticate(first);
+    const { body } = await interactive(first, token, "deposit", "10.0000000");
+    current = new Date("2026-09-11T12:00:09.500Z");
+
+    const [a, b] = [await status(first, token, body.id), await status(second, token, body.id)];
+    expect(a).toMatchObject({ status: "completed" });
+    expect(b).toMatchObject({ status: "completed", stellar_transaction_id: a.stellar_transaction_id });
+    expect(chain.payouts).toHaveLength(1);
+  });
+
+  it("kurcalanmış işlem kimliğini reddeder: tutar sonradan büyütülemez", async () => {
+    const { instance } = app();
+    const token = await authenticate(instance);
+    const { body } = await interactive(instance, token, "deposit", "10.0000000");
+    const [payload, signaturePart] = String(body.id).split(".");
+    const forged = `${Buffer.from(
+      JSON.stringify({ ...JSON.parse(Buffer.from(payload ?? "", "base64url").toString()), amount: "9999.0000000" }),
+    ).toString("base64url")}.${signaturePart}`;
+
+    const response = await instance.request(`/sep24/transaction?id=${encodeURIComponent(forged)}`, {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(response.status).toBe(404);
   });
 
   it("ek durum dallarını simulate parametresiyle tetikler", async () => {
@@ -199,9 +261,9 @@ describe("mock anchor", () => {
       body: JSON.stringify({ id: body.id, tx_hash: "a".repeat(64) }),
     });
     expect(await report.json()).toEqual({ matched: true });
-    expect(await status(instance, token, body.id)).toMatchObject({ status: "pending_anchor" });
+    expect(await status(instance, token, body.id, "a".repeat(64))).toMatchObject({ status: "pending_anchor" });
     current = new Date("2026-09-11T12:00:34.000Z");
-    expect(await status(instance, token, body.id)).toMatchObject({ status: "completed" });
+    expect(await status(instance, token, body.id, "a".repeat(64))).toMatchObject({ status: "completed" });
   });
 
   it("yanlış memo ile gelen ödemeyi eşleştirmez ve pending_external durumunda tutar", async () => {
@@ -216,7 +278,7 @@ describe("mock anchor", () => {
       body: JSON.stringify({ id: body.id, tx_hash: "b".repeat(64) }),
     });
     expect(report.status).toBe(422);
-    expect(await status(instance, token, body.id)).toMatchObject({ status: "pending_external", memo_matched: false });
+    expect(await status(instance, token, body.id, "b".repeat(64))).toMatchObject({ status: "pending_external", memo_matched: false });
   });
 
   it("zincirde olmayan ya da başka hesaba giden ödemeyi kabul etmez", async () => {

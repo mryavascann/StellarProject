@@ -25,6 +25,11 @@ export function anchorRoutes(anchor: AnchorClient, classic: ClassicDependencies)
     const metadata = await anchor.metadata();
     return { code: metadata.assetCode, issuer: metadata.assetIssuer };
   };
+  /** Anchor JWT'si tarayıcıdan gelir; yoksa boş metin, istemci anchor'a gitmeden auth_required der. */
+  const bearer = (context: { req: { header(name: string): string | undefined } }): string => {
+    const header = context.req.header("authorization");
+    return header?.startsWith("Bearer ") ? header.slice(7) : "";
+  };
 
   app.get("/info", async (context) => {
     const [metadata, info, price] = await Promise.all([anchor.metadata(), anchor.info(), anchor.price()]);
@@ -38,21 +43,16 @@ export function anchorRoutes(anchor: AnchorClient, classic: ClassicDependencies)
     });
   });
 
-  app.get("/session", (context) => {
-    const account = context.req.query("account");
-    if (!account) throw new TypeError("account gerekli.");
-    return json(context, { active: anchor.hasSession(account) });
-  });
-
   app.post("/challenge", async (context) => {
     const body = await context.req.json<Record<string, unknown>>();
     return json(context, { transaction: await anchor.challenge(requireText(body, "account")) });
   });
 
+  /** SEP-10 sonucu JWT'yi tarayıcıya verir; API onu saklamaz (sunucu örnekleri arasında kaybolurdu). */
   app.post("/token", async (context) => {
     const body = await context.req.json<Record<string, unknown>>();
-    await anchor.exchangeToken(requireText(body, "account"), requireText(body, "signedTransaction"));
-    return json(context, { ok: true });
+    const session = await anchor.exchangeToken(requireText(body, "account"), requireText(body, "signedTransaction"));
+    return json(context, session);
   });
 
   app.get("/trustline", async (context) => {
@@ -74,7 +74,7 @@ export function anchorRoutes(anchor: AnchorClient, classic: ClassicDependencies)
     if (!FIAT_PATTERN.test(amountFiat)) throw new TypeError("amountFiat 2 ondalıklı metin olmalı (örn. 500.00).");
     // SEP-38: TL → USDC firm quote; süresi dolmuşsa istemci sessizce yeniden fiyatlar.
     const quote = await anchor.quote(`${amountFiat}00000`);
-    const started = await anchor.startDeposit(account, quote.buy_amount);
+    const started = await anchor.startDeposit(account, quote.buy_amount, bearer(context));
     return json(context, { ...started, amountAsset: quote.buy_amount, quoteExpiresAt: quote.expires_at });
   });
 
@@ -83,7 +83,7 @@ export function anchorRoutes(anchor: AnchorClient, classic: ClassicDependencies)
     const account = requireText(body, "account");
     const amountAsset = requireText(body, "amountAsset");
     if (!ASSET_PATTERN.test(amountAsset)) throw new TypeError("amountAsset 7 ondalıklı metin olmalı.");
-    return json(context, await anchor.startWithdraw(account, amountAsset));
+    return json(context, await anchor.startWithdraw(account, amountAsset, bearer(context)));
   });
 
   /** Çekim ödemesinin imzasız XDR'ı: memo anchor yanıtından birebir, üye imzalar (K-002). */
@@ -112,7 +112,7 @@ export function anchorRoutes(anchor: AnchorClient, classic: ClassicDependencies)
     const direction = context.req.query("direction");
     if (!account || !id) throw new TypeError("account ve id gerekli.");
     if (direction !== "deposit" && direction !== "withdraw") throw new TypeError("direction deposit veya withdraw olmalı.");
-    const raw = await anchor.transaction(account, id);
+    const raw = await anchor.transaction(account, id, bearer(context), context.req.query("paymentHash"));
     return json(context, mapAnchorStatus(direction, raw.status, raw.memoMatched));
   });
 
