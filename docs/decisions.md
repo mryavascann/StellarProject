@@ -166,6 +166,50 @@ müdahalesi uygulamaz.
 
 ---
 
+## K-012 · KARAR · Simülasyonda USDC ve pay zincirdedir, fiat ayağı bellektedir
+
+**Karar:** Mock anchor deposit tamamlanınca **gerçek** mock USDC'yi (ihraççı = `MOCK_USDC_ISSUER`) üyenin
+hesabına öder; trustline yoksa `pending_trust` döner. Withdraw'da ödeme **Horizon'dan okunarak**
+doğrulanır: hedef custodial hesap (= ihraççı), varlık ve `memo` birebir eşleşmezse işlem
+`pending_external`da askıda kalır. Mock DeFindex, SDK gibi imzasız XDR üretir; deposit'te ihraççı
+(vault imzası) payı üyeye öder, withdraw'da üye payı ihraççıya geri gönderir (yakma). Yalnızca
+TL tarafı (banka havalesi) bellektedir.
+
+**Gerekçe:** A.4 "kolay mock yazarsan canlıya geçişte her şey kırılır". Trustline, memo ve
+imza sırası gibi gerçek anchor/DeFindex tuzakları ancak zincirde yaşanırsa test edilir.
+Uçtan uca test (8.5) böylece kontrat dahil tamamen testnet üzerinde koşar.
+
+**Etkiler:** `apps/mock-anchor/src/chain.ts` (Horizon/bellek kapısı), `apps/api/src/defindex/mock.ts`,
+`apps/api/src/anchor/classic.ts` (trustline + memo'lu ödeme XDR'ı). USDC ayağı canlıda
+zaten gerçektir; bu karar canlıya geçişte hiçbir şeyi değiştirmez.
+
+---
+
+## K-013 · KARAR · API anchor ağ geçididir, JWT'yi sunucu tutar, imza her zaman cüzdanda
+
+**Karar:** SEP-10/24/38 çağrılarını `apps/api` yapar; JWT hesap başına sunucu belleğinde
+tutulur. Sunucu hiçbir zaman imza atamaz: oturum yoksa/dolmuşsa 401 `auth_required` döner,
+web challenge'ı cüzdana imzalatıp aynı isteği **bir kez** tekrarlar (`withAnchorSession`).
+Kontrat ve DeFindex XDR'larını da API kurar, üye imzalar, API gönderir.
+
+**Gerekçe:** Bölüm 8.3'teki anchor testleri API kodunu mock anchor'a karşı koşturmalı; kod
+web'de olsaydı test yüzeyi bölünürdü. "401'de şeffaf tekrar" kuralı (Bölüm 9 kural 10) böylece
+tek yerde (`apps/web/src/lib/api.ts`) uygulanır. Secret'lar sunucuya gitmez.
+
+---
+
+## K-014 · KARAR · Demo/test için gizli anahtarla imzalayıcı, cüzdan kitiyle aynı arayüzde
+
+**Karar:** Web'de `Signer` arayüzü var; `connectWalletKit()` (Stellar Wallets Kit v2, npm
+`@creit.tech/stellar-wallets-kit@2.6.0`) ve `createKeySigner(secret)` aynı arayüzü uygular.
+Anahtar yalnızca sekme belleğinde (sessionStorage) durur, "Test hesabıyla gir" olarak etiketlidir.
+
+**Gerekçe:** Seed hesapları tarayıcı eklentisinde değil; uçtan uca test ve eklentisiz demo için
+şart. Mod kontrolü değildir (K-003 ihlali yok): canlı testnet'te de aynı şekilde çalışır.
+**Not:** skills-used.md'deki "v2 yalnızca JSR" notu eskimiş; npm'deki 2.6.0 v2 API'sini taşıyor.
+
+---
+
 ## Roadmap (kapsam dışı — dokunma, buraya yaz)
 
 Bölüm 13'ün kapsam dışı listesi: çoklu kasa, kasalar arası transfer, karmaşık davet akışı,

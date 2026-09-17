@@ -1,10 +1,15 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
@@ -16,13 +21,35 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
-    "baseUrl": ".",
     "paths": {
-      "@kasa/core": ["packages/core/src/index.ts"],
-      "@kasa/core/*": ["packages/core/src/*"],
-      "@kasa/config/*": ["config/*"]
-    }
+      "@kasa/core": [
+        "./packages/core/src/index.ts"
+      ],
+      "@kasa/core/*": [
+        "./packages/core/src/*"
+      ],
+      "@kasa/mock-anchor": [
+        "./apps/mock-anchor/src/app.ts"
+      ],
+      "@kasa/config/*": [
+        "./config/*"
+      ],
+      "@/*": [
+        "./apps/web/src/*"
+      ]
+    },
+    "jsx": "react-jsx"
   },
-  "include": ["config/**/*.ts", "scripts/**/*.ts", "packages/**/*.ts", "apps/**/*.ts", "apps/**/*.tsx"],
-  "exclude": ["node_modules", "**/dist", "**/.next"]
+  "include": [
+    "config/**/*.ts",
+    "scripts/**/*.ts",
+    "packages/**/*.ts",
+    "apps/**/*.ts",
+    "apps/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/dist",
+    "**/.next"
+  ]
 }

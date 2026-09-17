@@ -20,6 +20,7 @@ help:
 	@echo "  make test           TUM testler (kontrat + TypeScript)"
 	@echo "  make test:ts        yalnizca TypeScript testleri"
 	@echo "  make test:contract  yalnizca Soroban kontrat testleri"
+	@echo "  make test:e2e       uctan uca: testnet + mock anchor + mock DeFindex (~3 dk)"
 	@echo "  make test:live      canli modda entegrasyon testleri (etkinlik gunu)"
 	@echo "  make typecheck      tip kontrolu"
 	@echo "  make dev            tum uygulamalari gelistirme modunda baslatir"

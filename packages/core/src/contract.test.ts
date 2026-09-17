@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseContractMembers, parseContractRequests } from "./contract.js";
+import { parseContractMembers, parseContractRequests } from "./contract";
 
 const ADDRESS = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
 
@@ -12,6 +12,16 @@ describe("kontrat yanıt ayrıştırıcıları", () => {
 
     expect(member?.contributed).toBe(900_719_925_474_099_300_000n);
     expect(member?.withdrawn).toBe(0n);
+  });
+
+  it("RPC'den gelen dizi biçimli enum durumunu (['Pending']) metinle aynı kabul eder", () => {
+    const [request] = parseContractRequests([
+      { id: 1, requester: ADDRESS, amount: 1n, note: "x", approvals: [], status: ["Pending"], created_at: 1n, expires_at: 2n },
+    ]);
+    expect(request?.status).toBe("Pending");
+    expect(() =>
+      parseContractRequests([{ id: 1, requester: ADDRESS, amount: 1n, note: "x", approvals: [], status: ["Bilinmeyen"], created_at: 1, expires_at: 2 }]),
+    ).toThrow("bilinmeyen kontrat durumu");
   });
 
   it("talepleri durum ve onaylarıyla ayrıştırır", () => {

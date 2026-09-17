@@ -17,5 +17,9 @@
   },
   "devDependencies": {
     "vitest": "^2.1.8"
+  },
+  "main": "./src/app.ts",
+  "exports": {
+    ".": "./src/app.ts"
   }
 }

@@ -1,6 +1,16 @@
 # Teknik Tasarım
 
-Durum: **taslak — Faz S1.** Kontrat ve adaptörler yazıldıkça (S2, S3) güncellenir.
+Durum: **Faz S3 — simülasyonda tam döngü çalışıyor.** Kontrat testnet'te, adaptörler ve web yazıldı,
+uçtan uca test testnet'te koşuyor. Canlıya geçişte yalnızca A.5 listesi değişir.
+
+**Uygulama katmanı özeti (S3):**
+- `apps/api` bir **ağ geçidi**dir (K-013): SEP-10/24/38'i anchor'a karşı kendisi yapar, JWT'yi
+  hesap başına bellekte tutar, kontrat/DeFindex/klasik ödeme XDR'larını kurar; **imza atmaz**.
+  Oturum yoksa 401 `auth_required` döner, web SEP-10'u cüzdanla şeffafça tekrarlar.
+- `apps/web` altı ekrandır: giriş · kasa · para yatır · harcama iste · para çek · defter.
+  Metin ve renk yalnızca `packages/core/src/brand.ts`'ten gelir; tema CSS'i çalışma anında üretilir.
+- Simülasyonun zincir ayağı gerçektir (K-012): mock anchor USDC'yi testnet'te öder ve withdraw
+  ödemesini Horizon'dan doğrular; mock DeFindex USDC ↔ pay takasını zincirde yapar.
 Kilitli kararların gerekçeleri burada tekrarlanmaz; `docs/decisions.md` esastır.
 
 ---

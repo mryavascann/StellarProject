@@ -9,13 +9,16 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@defindex/sdk": "0.3.0",
     "@hono/node-server": "^1.19.1",
     "@iarna/toml": "^2.2.5",
     "@kasa/core": "workspace:*",
     "@stellar/stellar-sdk": "^17.0.1",
+    "decimal.js": "^10.6.0",
     "hono": "^4.9.7"
   },
   "devDependencies": {
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "@kasa/mock-anchor": "workspace:*"
   }
 }

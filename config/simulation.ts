@@ -119,6 +119,12 @@ export const DEFINDEX = {
   initialSharePrice: "1.0000000",
   /** ⚠ SİM — demoda getiri görünsün diye dakikada +0,00002 */
   sharePriceIncrementPerMinute: "0.00002",
+  /**
+   * ⚠ SİM — pay fiyatının artmaya başladığı an (ISO 8601).
+   * Sabit bir tarih olmasının sebebi: süreç yeniden başlayınca fiyat 1,0'a dönmesin,
+   * daha önce alınan paylar aniden değer kaybetmesin.
+   */
+  sharePriceEpoch: "2026-09-16T00:00:00.000Z",
   /** ⚠ SİM — vault komisyonu 100 bps (%1) */
   feeBps: 100,
   /** ⚠ SİM — deposit/withdraw yapay gecikmesi (ms) */

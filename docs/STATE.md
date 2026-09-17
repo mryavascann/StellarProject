@@ -1,53 +1,63 @@
 # PROJE DURUMU
 
-Son güncelleme: 2026-09-11 17:09 · Ajan: codex-integration-04 · Mod: **simulation**
+Son güncelleme: 2026-09-16 23:40 · Ajan: claude-s3-fullloop · Mod: **simulation**
 
 ## Faz
-Şu an: **Faz S3 (entegrasyon)** — S2 kontrat, token ve testnet deploy tamamlandı.
-Tamamlanan: Faz S1 · Faz S2 · S3 seed ve ortak core katmanı.
+Şu an: **Faz S3 tamamlandı** — simülasyonda tam döngü testnet'te çalışıyor.
+Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (A.5 listesi, `KASA_MODE=live`).
 
 ## Çalışan (test edilmiş, kanıtlı)
-- [x] `shared_vault`: **30/30 test yeşil**; yetki, onay, execute, sınır, durum ve TTL kapsamı.
-- [x] Release Wasm: `contracts/shared-vault/target/wasm32v1-none/release/shared_vault.wasm` (26.992 bayt).
-- [x] `packages/core`: **44/44 test yeşil**; money, brand, Stellar adresleri ve kontrat yanıtları.
-- [x] `scripts/gen-accounts.ts`: **3/3 test yeşil**; 6 keypair üretir, 5 zincir hesabını fonlar.
-- [x] Deploy scriptleri: **6/6 test yeşil**; eksik env/geçersiz ID/ağ hatası güvenli biçimde durur.
-- [x] `.env.simulation` üretildi; 5/5 hesap Horizon testnet'te fonlu doğrulandı, git tarafından yok sayılıyor.
-- [x] Mock dfToken testnet'te: `CAAYBD6KZBCKTIIN7EAHIGH725UTMGJHTHLZWAQK5KODOEULGYC6WNLF`.
-- [x] Dört üyenin kUSDC bakiyesi Horizon'da **4/4 × 1000.0000000** doğrulandı.
-- [x] SharedVault testnet'te: `CDJ5OBFXZB6NLG3MJDL7MV4HK4FAS7SCM62KCLUCO5GD7IICHKVIE656`.
-- [x] On-chain `get_members`: 4 üye; `get_balance`: 0; token `balance(vault)`: 0.
-- [x] `scripts/seed.ts`: **4/4 test yeşil**, yeniden çalıştırılabilir; testnet demo verisi yazıldı.
-- [x] On-chain seed: katkılar 50/50/30/30 pay, kasa 160 pay; talepler Pending(1 onay) + Approved.
-- [x] Mock anchor ilk dilim: **9/9 test yeşil**; SEP-1/10/24/38, JWT, popup ve durum akışı.
-- [x] Mock anchor yerelde `:8788` üzerinde gerçek HTTP çağrısıyla doğrulandı; doğrulama sonrası kapatıldı.
-- [x] `pnpm typecheck` ve `cargo fmt --check` temiz.
-- [x] Windows Unicode linker çözümü: minimal GNU toolchain `C:\rust`, `scripts/run-cargo.mjs`.
+- [x] `shared_vault` testnet'te: `CDJ5OBFXZB6NLG3MJDL7MV4HK4FAS7SCM62KCLUCO5GD7IICHKVIE656` — **30/30**.
+- [x] Mock dfToken (kUSDC SAC): `CAAYBD6KZBCKTIIN7EAHIGH725UTMGJHTHLZWAQK5KODOEULGYC6WNLF`.
+- [x] `packages/core`: **49/49** (para, marka, adres, kontrat yanıtları — RPC `["Pending"]` enum biçimi dahil, defter ayrıştırıcı).
+- [x] Scripts: **13/13** (gen-accounts, deploy-mock-token, deploy, seed).
+- [x] Mock anchor: **13/13** — SEP-1/10/24/38, JWT 15 dk, quote 90 sn, popup DENY,
+      **deposit tamamlanınca gerçek USDC ödemesi (trustline yoksa `pending_trust`)**,
+      **withdraw ödemesi Horizon'dan doğrulanır, yanlış memo → `pending_external` askıda**.
+- [x] API: **80/80** — anchor istemcisi (mod sınırı, JWT oturumu, 401 → `auth_required`),
+      DeFindex mock/live aynı arayüz + fabrika, klasik işlemler (trustline, memo'lu ödeme),
+      kontrat XDR üretimi/gönderimi, route'lar, hata eşlemesi.
+- [x] Web: **34/34** — API istemcisi (şeffaf SEP-10 tekrarı), biçimlendirme, akışlar, bileşenler.
+- [x] **Uçtan uca (8.5): testnet'te 2 kez geçti (~85 sn)** — `pnpm test:e2e`. Taze üye: add_member →
+      trustline → 1500 TL yatır → USDC (zincir) → pay (zincir) → kasaya kilitle → eşik üstü talep →
+      2 onay → execute → pay bozdur → memo'lu ödeme → `completed` → remove_member; kasa bakiyesi başa döner.
+- [x] Yerel sunucular çalıştı ve tarayıcı/curl ile doğrulandı: web `:3000` (6 sayfa 200),
+      API `:8787` (testnet'ten `Moda Ev Kasası` snapshot'ı), mock anchor `:8788`.
+- [x] `pnpm typecheck` temiz (web dahil, `baseUrl` kaldırıldı).
 
 ## Kırık / eksik
-- [ ] `apps/api` ve `apps/web` henüz boş.
-- [ ] Mock anchor'da yanlış memo ödeme eşleştirme davranışı ve API karşılıklı testleri eksik.
+- [ ] Web tarayıcıda **elle** tıklanarak denenmedi (yalnızca HTTP 200 + birim testleri). İlk iş: `pnpm dev`, test hesabıyla gir, bir yatırma akışı izle.
+- [ ] Cüzdan kiti (Freighter vb.) gerçek eklentiyle denenmedi; kod d.ts'e göre yazıldı.
+- [ ] `pnpm test:live` hedefi var ama içi boş (canlı entegrasyon testleri etkinlik günü yazılacak).
+- [ ] Canlı `getVaultInfo` pay fiyatı vermez → web bakiye/pay oranından türetir; canlıda doğrulanacak.
+- [ ] Değişiklikler **commit edilmedi** (37 dosya). Kullanıcı onayıyla commit atılmalı.
 
 ## Test durumu
-- Kontrat: **30/30** · Core: **44/44** · Script: **13/13** · Mock anchor: **9/9** · Toplam: **96/96 yeşil**
-- API: 0 · Web: 0 · Uçtan uca: 0/1
+- Kontrat **30/30** · Core **49/49** · Scripts **13/13** · Mock anchor **13/13** · API **80/80** · Web **34/34**
+- Toplam **219/219 yeşil** · Uçtan uca **1/1** (testnet, `KASA_E2E=1` ile)
 
 ## Ortam
-- node 24.19 · pnpm 11.22 · stellar CLI 28.0.0 · rustc/cargo 1.98.1 GNU
-- `wasm32v1-none` ve rustfmt kurulu; ASCII toolchain: `C:\rust\rustup`
-- `.env.simulation` dolu mu: **evet**; secret'lar konsola/loga yazılmadı.
-- Üretilmiş contract ID'ler: mock dfToken ve SharedVault yukarıdaki testnet kayıtları.
+- node 24.19 · pnpm 11.22 · stellar CLI 28 · rustc 1.98 GNU · TypeScript 5.9
+- Yeni paketler: `@defindex/sdk@0.3.0` (api), `next@16.3.5`, `react@19.3`, `tailwindcss@4.3`,
+  `@creit.tech/stellar-wallets-kit@2.6.0`, `jsdom`, `@testing-library/react` (web)
+- `.env.simulation` dolu; secret'lar loga yazılmadı. Mock USDC = kUSDC ile aynı ihraççı.
+- pnpm-workspace `allowBuilds`: appkit/bufferutil/secp256k1/utf-8-validate açıkça `false`.
 
 ## Sıradaki iş (öncelik sırasıyla)
-1. Mock anchor yanlış memo/ödeme eşleştirme davranışını test-first tamamla.
-2. API anchor ve DeFindex adaptörleri; mod kontrolü yalnızca iki fabrika dosyasında.
-3. Web → testnet uçtan uca test.
-4. **Kullanıcı talebi:** Web ilk çalışabilir hâle geldiği anda ciladan önce local sunucuyu başlat,
-   tarayıcıdan doğrula ve erişim adresini paylaş.
+1. Web'i tarayıcıda elle dene (`pnpm dev` → http://localhost:3000/giris, `.env.simulation` üye secret'ı). Cila.
+2. `test:live` içeriği: gerçek anchor `/info`, TOML, SEP-10; gerçek DeFindex `getVaultInfo`.
+3. Etkinlik Faz 0: A.5 listesi → `config/live.ts`, `.env.live`, `KASA_MODE=live`.
+4. Demo senaryosu (Bölüm 14): QR/davet linki, sunum, video.
 
 ## Tuzaklar / öğrenilenler
-- MinGW uzun Unicode yolu okuyamıyor; doğrudan `cargo` yerine `pnpm test:contract` kullan.
-- Native Windows testte `--lib` gerekli; aksi hâlde PE `cdylib` export ordinal sınırı aşılabiliyor.
-- SDK 27 TTL testi için `testutils::storage::Instance` trait'i scope'ta olmalı.
-- `extend_ttl` yalnızca eşik altındayken uzatır; test zamanı 100.000 ledger eşiğinin altına indirmeli.
-- Workspace paketi çalışırken CWD paket dizinidir; kök env yolu `import.meta.url` üzerinden çözülmeli.
+- **RPC `scValToNative` birim enum'u `["Pending"]` dizisi verir**, CLI JSON `"Pending"` verir; core ikisini de kabul eder.
+- **Turbopack `./x.js` uzantılı TS import'unu çözmüyor** → core içi import'lar uzantısız.
+- **TS 5.9+ `baseUrl` kullanımdan kalktı**; `paths` tsconfig'e göreli çalışır.
+- stellar-sdk v17: `DecoratedSignature.signature` metot değil **alan**.
+- `@vitejs/plugin-react@6` vite 6 ister; vitest 2 (vite 5) ile `esbuild.jsx: "automatic"` yeter.
+- jsdom ortamında XDR kodlama Buffer realm'i yüzünden bozulur → imza testleri `@vitest-environment node`.
+- pnpm 11 onaylanmamış build script'lerini `pnpm test` öncesi kurulumda hata sayar → `allowBuilds` ile açıkça reddet.
+- Mock DeFindex payı klasik varlık olduğu için trustline ister; gerçek dfToken Soroban token'ıdır, istemez. Mock aynı işlemde `changeTrust` ekler.
+- DeFindex SDK gerçek tipleri: `getVaultAPY → {apy:number}`, `xdr: string|null`, tutarlar `number[]` (skill dokümanından farklı).
+- E2E her koşuda friendbot'tan yeni hesap alır ve ~10 USDC'yi o hesapta bırakır (önemsiz).
+- MinGW/Windows notları önceki STATE'ten geçerli: `pnpm test:contract` kullan, `--lib`.

@@ -25,10 +25,11 @@ olarak bankana geliyor.
 
 | | |
 |---|---|
-| Faz | **S1 — iskelet** (simülasyon modu) |
-| Canlı demo URL | henüz yok |
+| Faz | **S3 — simülasyonda tam döngü** (simülasyon modu) |
+| Canlı demo URL | henüz yok (yerelde `pnpm dev` → http://localhost:3000) |
 | Demo videosu | henüz yok |
-| Kontrat adresi | henüz deploy edilmedi |
+| Kontrat adresi | [`CDJ5OBFXZB6NLG3MJDL7MV4HK4FAS7SCM62KCLUCO5GD7IICHKVIE656`](https://stellar.expert/explorer/testnet/contract/CDJ5OBFXZB6NLG3MJDL7MV4HK4FAS7SCM62KCLUCO5GD7IICHKVIE656) |
+| Mock pay token (kUSDC) | [`CAAYBD6KZBCKTIIN7EAHIGH725UTMGJHTHLZWAQK5KODOEULGYC6WNLF`](https://stellar.expert/explorer/testnet/contract/CAAYBD6KZBCKTIIN7EAHIGH725UTMGJHTHLZWAQK5KODOEULGYC6WNLF) |
 | Ağ | Stellar **Testnet** |
 
 Projenin canlı ve kanıtlı durumu: [`docs/STATE.md`](docs/STATE.md).
@@ -103,8 +104,15 @@ pnpm seed             # demo verisi
 
 ```bash
 pnpm sim    # yalnızca mock anchor  (http://localhost:8788)
-pnpm dev    # mock anchor + API + web
+pnpm dev    # mock anchor (8788) + API (8787) + web (3000)
 ```
+
+Web'de giriş: cüzdan (Stellar Wallets Kit) **veya** "Test hesabıyla gir" ile `.env.simulation`'daki
+bir demo üyesinin gizli anahtarı. Footer'daki **Geliştirici modu** kontrat adresini, ham
+tutarları ve işlem hash'lerini açar (jüri demosunda açılır).
+
+Uygulama katmanları: `apps/web` (Next.js) → `apps/api` (Hono; anchor ağ geçidi, DeFindex adaptörü,
+kontrat XDR üretimi) → testnet. İmza **her zaman** kullanıcıda; API hiçbir gizli anahtar tutmaz.
 
 ## Testler
 
@@ -112,8 +120,12 @@ pnpm dev    # mock anchor + API + web
 pnpm test           # HEPSİ: Soroban kontrat testleri + TypeScript testleri
 pnpm test:contract  # yalnızca kontrat  (cargo test)
 pnpm test:ts        # yalnızca TypeScript (vitest)
+pnpm test:e2e       # UÇTAN UCA: testnet + mock anchor + mock DeFindex, taze üyeyle tam döngü (~3 dk)
 pnpm test:live      # canlı modda entegrasyon testleri (etkinlik günü)
 ```
+
+Uçtan uca test gerçek testnet'te koşar: üye ekle → hesap hazırla → TL yatır → USDC → pay →
+kasaya kilitle → eşik üstü talep → 2 onay → execute → pay bozdur → memo'lu ödemeyle bankaya çek.
 
 **Test yoksa kod yoktur.** Test listesi ve disiplini: MASTER PROMPT Bölüm 8.
 
@@ -126,8 +138,13 @@ Etkinlik öncesi her şey `KASA_MODE=simulation` ile geliştirilir: anchor çağ
 **zorlaştırılmıştır** — string tutarlar, 90 saniyede dolan quote'lar, 15 dakikada dolan JWT,
 yanlış memo'yu eşleştirmeme, `X-Frame-Options: DENY`.
 
-Mod farkı yalnızca **iki adaptör dosyasında** yaşar. Simüle edilmiş her sabit
-`config/simulation.ts` içinde ve `⚠ SİM` etiketlidir.
+Mock'un zincir ayağı **gerçektir** (`docs/decisions.md` K-012): deposit tamamlanınca mock USDC
+testnet'te üyeye ödenir (trustline yoksa `pending_trust`), withdraw ödemesi Horizon'dan okunup
+memo'su doğrulanır, mock DeFindex USDC ↔ pay takasını zincirde yapar. Yalnızca TL tarafı bellektedir.
+
+Mod farkı yalnızca **iki adaptör dosyasında** yaşar (`apps/api/src/anchor/client.ts`,
+`apps/api/src/defindex/client.ts`). Simüle edilmiş her sabit `config/simulation.ts` içinde ve
+`⚠ SİM` etiketlidir.
 
 ---
 

@@ -1,4 +1,4 @@
-import { assertAccountAddress } from "./stellar.js";
+import { assertAccountAddress } from "./stellar";
 
 export const REQUEST_STATUSES = ["Pending", "Approved", "Executed", "Cancelled"] as const;
 export type RequestStatus = (typeof REQUEST_STATUSES)[number];
@@ -58,6 +58,16 @@ function addressField(value: unknown, field: string): string {
   return assertAccountAddress(stringField(value, field));
 }
 
+/**
+ * Kontrat enum'u iki biçimde gelir: CLI JSON'u `"Pending"` verir, RPC `scValToNative` ise
+ * birim varyantı `["Pending"]` dizisi olarak verir. İkisi de aynı anlamdadır; ikisi de kabul edilir.
+ */
+function enumName(value: unknown, field: string): string {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value) && value.length === 1 && typeof value[0] === "string") return value[0];
+  throw new TypeError(`${field} enum adı olmalı: ${String(value)}`);
+}
+
 /** `get_members` JSON yanıtını para hassasiyetini koruyan uygulama tiplerine dönüştürür. */
 export function parseContractMembers(value: unknown): readonly ContractMember[] {
   if (!Array.isArray(value)) throw new TypeError("Üye yanıtı dizi olmalı.");
@@ -72,11 +82,46 @@ export function parseContractMembers(value: unknown): readonly ContractMember[] 
   });
 }
 
+export const LEDGER_KINDS = ["Deposit", "Spend", "EmergencyExit"] as const;
+export type LedgerKind = (typeof LEDGER_KINDS)[number];
+
+export interface ContractLedgerEntry {
+  readonly kind: LedgerKind;
+  readonly member: string;
+  readonly amount: bigint;
+  readonly at: number;
+  /** Deposit ve acil çıkış satırlarında `null` (kontratta `Option<u32>` None). */
+  readonly requestId: number | null;
+}
+
+/** `get_ledger` JSON yanıtını doğrular; `Option<u32>` None değeri null/undefined olarak gelebilir. */
+export function parseContractLedger(value: unknown): readonly ContractLedgerEntry[] {
+  if (!Array.isArray(value)) throw new TypeError("Defter yanıtı dizi olmalı.");
+  return value.map((item, index) => {
+    const entry = record(item, `ledger[${index}]`);
+    const kind = enumName(entry.kind, `ledger[${index}].kind`);
+    if (!LEDGER_KINDS.includes(kind as LedgerKind)) {
+      throw new TypeError(`ledger[${index}].kind bilinmeyen tür: ${kind}`);
+    }
+    return {
+      kind: kind as LedgerKind,
+      member: addressField(entry.member, `ledger[${index}].member`),
+      amount: bigintField(entry.amount, `ledger[${index}].amount`),
+      at: integerField(entry.at, `ledger[${index}].at`),
+      requestId:
+        entry.request_id === null || entry.request_id === undefined
+          ? null
+          : integerField(entry.request_id, `ledger[${index}].request_id`),
+    };
+  });
+}
+
 function requestStatus(value: unknown, field: string): RequestStatus {
-  if (typeof value !== "string" || !REQUEST_STATUSES.includes(value as RequestStatus)) {
-    throw new TypeError(`${field} bilinmeyen kontrat durumuna sahip: ${String(value)}`);
+  const name = enumName(value, field);
+  if (!REQUEST_STATUSES.includes(name as RequestStatus)) {
+    throw new TypeError(`${field} bilinmeyen kontrat durumuna sahip: ${name}`);
   }
-  return value as RequestStatus;
+  return name as RequestStatus;
 }
 
 /** `get_requests` JSON yanıtını doğrular; tutarları hiçbir zaman `number` yapmaz. */

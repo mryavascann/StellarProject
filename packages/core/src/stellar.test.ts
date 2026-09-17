@@ -1,7 +1,7 @@
 import { StrKey } from "@stellar/stellar-sdk";
 import { describe, expect, it } from "vitest";
 
-import { assertAccountAddress, assertContractAddress, explorerUrl, shortAddress } from "./stellar.js";
+import { assertAccountAddress, assertContractAddress, explorerUrl, shortAddress } from "./stellar";
 
 const ACCOUNT = StrKey.encodeEd25519PublicKey(Buffer.alloc(32, 7));
 const CONTRACT = StrKey.encodeContract(Buffer.alloc(32, 9));

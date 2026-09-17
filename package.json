@@ -21,7 +21,8 @@
     "deploy": "tsx scripts/deploy.ts",
     "deploy:mock-token": "tsx scripts/deploy-mock-token.ts",
     "gen:accounts": "tsx scripts/gen-accounts.ts",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "test:e2e": "cross-env KASA_E2E=1 pnpm --filter @kasa/api exec vitest run src/e2e.test.ts"
   },
   "devDependencies": {
     "@stellar/stellar-sdk": "^17.0.1",

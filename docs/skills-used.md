@@ -44,6 +44,9 @@ anchor skill'lerinin topluluk listesinde yer aldığını teyit etti.
 - Cüzdan: `@creit-tech/stellar-wallets-kit` v2 **JSR** üzerinden dağıtılıyor ve tamamen statik
   (`StellarWalletsKit.init({ modules: defaultModules(), network })`, `authModal()`, `signTransaction(xdr)`).
   v1 npm'deki `@creit.tech/stellar-wallets-kit` — **nokta farkına dikkat**. Faz S3'te v2 kullanılacak.
+  **Düzeltme (S3, 2026-09-16):** JSR yolu 404 verdi; npm'deki `@creit.tech/stellar-wallets-kit@2.6.0`
+  v2 API'sini (`StellarWalletsKit.init/authModal/getAddress/signTransaction/disconnect`) taşıyor ve
+  kullanılan odur. Doğrulama kaynağı paketin kendi `esm/sdk/kit.d.ts` dosyası (K-014).
 
 ### 4. `https://skills.stellar.org/skills/assets/SKILL.md`
 **Ne:** Klasik varlıklar, SAC, SEP-41 token arayüzü.
