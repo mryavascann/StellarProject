@@ -26,7 +26,7 @@ olarak bankana geliyor.
 | | |
 |---|---|
 | Faz | **S3 — simülasyonda tam döngü** (simülasyon modu) |
-| Canlı demo URL | henüz yok (yerelde `pnpm dev` → http://localhost:3000) |
+| Canlı demo URL | [https://stellar-kasa.vercel.app](https://stellar-kasa.vercel.app) — web arayüzü; işlem API'si henüz yerel simülasyon sunucusuna bağlı |
 | Demo videosu | henüz yok |
 | Kontrat adresi | [`CDJ5OBFXZB6NLG3MJDL7MV4HK4FAS7SCM62KCLUCO5GD7IICHKVIE656`](https://stellar.expert/explorer/testnet/contract/CDJ5OBFXZB6NLG3MJDL7MV4HK4FAS7SCM62KCLUCO5GD7IICHKVIE656) |
 | Mock pay token (kUSDC) | [`CAAYBD6KZBCKTIIN7EAHIGH725UTMGJHTHLZWAQK5KODOEULGYC6WNLF`](https://stellar.expert/explorer/testnet/contract/CAAYBD6KZBCKTIIN7EAHIGH725UTMGJHTHLZWAQK5KODOEULGYC6WNLF) |

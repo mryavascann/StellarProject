@@ -1,6 +1,6 @@
 # PROJE DURUMU
 
-Son güncelleme: 2026-09-17 21:27 · Ajan: codex-live-gate · Mod: **simulation**
+Son güncelleme: 2026-09-17 21:44 · Ajan: codex-vercel-deploy · Mod: **simulation**
 
 ## Faz
 Şu an: **Faz S3 tamamlandı** — simülasyonda tam döngü testnet'te çalışıyor.
@@ -25,6 +25,8 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (A.5 listesi, `
       2 onay → execute → pay bozdur → memo'lu ödeme → `completed` → remove_member; kasa bakiyesi başa döner.
 - [x] Yerel sunucular çalıştı ve tarayıcı/curl ile doğrulandı: web `:3000` (6 sayfa 200),
       API `:8787` (testnet'ten `Moda Ev Kasası` snapshot'ı), mock anchor `:8788`.
+- [x] Web üretim dağıtımı: https://stellar-kasa.vercel.app — `/giris` dış ağdan HTTP 200,
+      Vercel build READY, SSO koruması kapalı ve URL herkese açık.
 - [x] `pnpm typecheck` temiz (web dahil, `baseUrl` kaldırıldı).
 
 ## Kırık / eksik
@@ -33,7 +35,9 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (A.5 listesi, `
 - [ ] Cüzdan kiti (Freighter vb.) gerçek eklentiyle denenmedi; kod d.ts'e göre yazıldı.
 - [ ] `pnpm test:live` gerçek uçlara karşı çalıştırılmadı; etkinlik günü verilecek `.env.live` değerleri henüz yok.
 - [ ] Canlı `getVaultInfo` pay fiyatı vermez → web bakiye/pay oranından türetir; canlıda doğrulanacak.
-- [ ] Bu görevdeki canlı kontrol ve doküman değişiklikleri commit edilmedi.
+- [ ] Vercel'deki web arayüzü henüz uzaktaki API/mock-anchor'a bağlı değil; oturum sonrası işlem ekranları
+      tarayıcının `localhost:8787` adresine erişmeye çalışır. Tam demo için API dağıtımı ve `NEXT_PUBLIC_KASA_API_URL` gerekir.
+- [ ] Bu görevdeki Vercel dağıtım/doküman değişiklikleri commit edilmedi.
 
 ## Test durumu
 - Kontrat **30/30** · Core **49/49** · Scripts **13/13** · Mock anchor **13/13** · API **84/84** · Web **34/34**
@@ -48,10 +52,10 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (A.5 listesi, `
 - pnpm-workspace `allowBuilds`: appkit/bufferutil/secp256k1/utf-8-validate açıkça `false`.
 
 ## Sıradaki iş (öncelik sırasıyla)
-1. Tarayıcı bağlantısı sağlanınca web'i elle dene (`pnpm dev` → http://localhost:3000/giris, test hesabı).
-2. Etkinlik Faz 0: A.5 listesi → `.env.live`, `KASA_MODE=live` → `pnpm test:live`.
-3. Canlı kontrolden sonra GO/NO-GO raporu; ardından gerçek uçtan uca akış.
-4. Demo senaryosu (Bölüm 14): QR/davet linki, sunum, video.
+1. API + mock anchor'ı erişilebilir bir sunucuya dağıt; Vercel'de `NEXT_PUBLIC_KASA_API_URL` ayarla ve web'i yeniden deploy et.
+2. Tarayıcı bağlantısı sağlanınca https://stellar-kasa.vercel.app/giris üzerinden akışı elle dene.
+3. Etkinlik Faz 0: A.5 listesi → `.env.live`, `KASA_MODE=live` → `pnpm test:live`.
+4. Canlı kontrolden sonra GO/NO-GO raporu; ardından gerçek uçtan uca akış ve demo paketi.
 
 ## Tuzaklar / öğrenilenler
 - **RPC `scValToNative` birim enum'u `["Pending"]` dizisi verir**, CLI JSON `"Pending"` verir; core ikisini de kabul eder.
@@ -67,3 +71,4 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (A.5 listesi, `
 - MinGW/Windows notları önceki STATE'ten geçerli: `pnpm test:contract` kullan, `--lib`.
 - Bu makinede `make` yok; PowerShell ilkesi `pnpm.ps1` dosyasını engelliyor. `pnpm.cmd` kullan.
 - Browser eklentisi/oturumu bağlı değilse elle UI testi yapılamıyor; HTTP smoke veya kaynak incelemesi bunun yerine geçmez.
+- Vercel monorepo proje kökü `apps/web`; `.vercelignore` yerel build/node_modules çıktılarının yüklenmesini engeller.

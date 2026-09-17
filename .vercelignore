@@ -1,0 +1,14 @@
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+target/
+contracts/shared-vault/target/
+.git/
+.stellar/
+coverage/
+*.log
+*.wasm
+.env
+.env.*
+!.env.example
