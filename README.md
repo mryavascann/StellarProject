@@ -122,6 +122,7 @@ pnpm test:contract  # yalnızca kontrat  (cargo test)
 pnpm test:ts        # yalnızca TypeScript (vitest)
 pnpm test:e2e       # UÇTAN UCA: testnet + mock anchor + mock DeFindex, taze üyeyle tam döngü (~3 dk)
 pnpm test:live      # canlı modda entegrasyon testleri (etkinlik günü)
+pnpm test:deploy    # DAĞITIM: yayındaki URL'de TOML, SEP-10, kasa ve istemci paketi denetlenir
 ```
 
 Uçtan uca test gerçek testnet'te koşar: üye ekle → hesap hazırla → TL yatır → USDC → pay →

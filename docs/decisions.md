@@ -185,11 +185,14 @@ zaten gerçektir; bu karar canlıya geçişte hiçbir şeyi değiştirmez.
 
 ---
 
-## K-013 · KARAR · API anchor ağ geçididir, JWT'yi sunucu tutar, imza her zaman cüzdanda
+## K-013 · KARAR · API anchor ağ geçididir, imza her zaman cüzdanda
 
-**Karar:** SEP-10/24/38 çağrılarını `apps/api` yapar; JWT hesap başına sunucu belleğinde
-tutulur. Sunucu hiçbir zaman imza atamaz: oturum yoksa/dolmuşsa 401 `auth_required` döner,
-web challenge'ı cüzdana imzalatıp aynı isteği **bir kez** tekrarlar (`withAnchorSession`).
+> **17 Eylül 2026'da güncellendi:** "JWT'yi sunucu tutar" kısmı **K-015 ile değişti**.
+> Kararın geri kalanı geçerli.
+
+**Karar:** SEP-10/24/38 çağrılarını `apps/api` yapar. Sunucu hiçbir zaman imza atamaz:
+oturum yoksa/dolmuşsa 401 `auth_required` döner, web challenge'ı cüzdana imzalatıp aynı
+isteği **bir kez** tekrarlar (`withAnchorSession`).
 Kontrat ve DeFindex XDR'larını da API kurar, üye imzalar, API gönderir.
 
 **Gerekçe:** Bölüm 8.3'teki anchor testleri API kodunu mock anchor'a karşı koşturmalı; kod
@@ -207,6 +210,36 @@ Anahtar yalnızca sekme belleğinde (sessionStorage) durur, "Test hesabıyla gir
 **Gerekçe:** Seed hesapları tarayıcı eklentisinde değil; uçtan uca test ve eklentisiz demo için
 şart. Mod kontrolü değildir (K-003 ihlali yok): canlı testnet'te de aynı şekilde çalışır.
 **Not:** skills-used.md'deki "v2 yalnızca JSR" notu eskimiş; npm'deki 2.6.0 v2 API'sini taşıyor.
+
+---
+
+## K-015 · KARAR · Sunucu tarafında oturum ve işlem durumu tutulmaz
+
+**Karar:** Anchor JWT'si **tarayıcıda** durur ve her anchor isteğinde `Authorization: Bearer`
+olarak gelir (`apps/web/src/lib/api.ts`). API'de oturum tablosu yoktur. Mock anchor'ın SEP-24
+işlem ve SEP-38 quote kimlikleri **imzalı ve kendini anlatan** metinlerdir
+(`apps/mock-anchor/src/ids.ts`); durum, kimliğin içindeki veriden + saatten + **zincirden**
+türetilir. Deposit ödemesinin tek sefer yapılması bellekte değil zincirde tutulur: ödeme
+işleme özel bir etiketle gider ve ödemeden önce zincirde aranır.
+
+**Gerekçe (ölçümle):** Uygulama Vercel'de koşuyor ve her istek başka bir sunucu örneğine
+düşebiliyor. 17 Eylül ölçümü: SEP-10 token'ı alındıktan hemen sonra gelen deposit isteği
+**401 `auth_required`** aldı; 12 eşzamanlı oturum yoklamasının yalnız 4'ü, 1 sn arayla 5
+sıralı yoklamanın **0'ı** oturumu aktif gördü. Jüri demosunda bunun karşılığı: her adımda
+fazladan cüzdan imzası ve "işlem bulunamadı" diyen ilerleme ekranı.
+
+**Etkiler:** `anchor/client.ts` (oturum tablosu kalktı, token parametre oldu) ·
+`routes/anchor.ts` (Bearer başlığı, `/api/anchor/session` ucu kaldırıldı) ·
+`mock-anchor/{app,sep38,chain,ids}.ts` · `web/lib/{api,flows}.ts` (token ve ödeme hash'i
+tarayıcıda) · `anchor/sep24.ts` (`requestWithFreshJwt` kaldırıldı; 401'de tekrar artık
+yalnız web'de).
+
+**Neyi bozmaz:** K-002 (memo'lu son adımı üye atar), K-003 (mod farkı iki adaptörde),
+A.4'ün hiçbir zorluğu gevşetilmedi — yanlış memo hâlâ `pending_external`'da askıda bırakır,
+quote hâlâ 90 saniyede dolar, JWT hâlâ 15 dakikada dolar.
+
+**Nasıl bozulur:** Gerçek anchor JWT'yi tarayıcıya vermeyi reddederse (olmaz; SEP-24'te JWT
+zaten istemcinindir) veya ödeme etiketi için memo alanını kullanamazsak.
 
 ---
 
