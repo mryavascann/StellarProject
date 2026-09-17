@@ -3,7 +3,7 @@
 import { Account, Keypair, Networks, Operation, Transaction, TransactionBuilder } from "@stellar/stellar-sdk";
 import { describe, expect, it } from "vitest";
 
-import { createKeySigner } from "./signer";
+import { createKeySigner, isTestnetCapableWallet } from "./signer";
 
 describe("anahtar imzalayıcı (yalnızca test/demo)", () => {
   it("işlemi kendi anahtarıyla imzalar ve imza doğrulanır", async () => {
@@ -22,5 +22,18 @@ describe("anahtar imzalayıcı (yalnızca test/demo)", () => {
 
   it("geçersiz gizli anahtarı reddeder", () => {
     expect(() => createKeySigner("SBOZUK")).toThrow();
+  });
+});
+
+describe("cüzdan listesi", () => {
+  it("testnet için imzalayamayan cüzdanı modalda göstermez", () => {
+    // LOBSTR modülü networkPassphrase'i kaynak kodunda açıkça atlıyor; testnet isteyemeyiz.
+    expect(isTestnetCapableWallet("lobstr")).toBe(false);
+  });
+
+  it("testnet destekleyen cüzdanlar listede kalır", () => {
+    for (const wallet of ["freighter", "xbull", "albedo", "rabet", "hana"]) {
+      expect(isTestnetCapableWallet(wallet)).toBe(true);
+    }
   });
 });

@@ -1,8 +1,8 @@
 import { Keypair, Networks, Operation, Transaction, TransactionBuilder } from "@stellar/stellar-sdk";
 import { describe, expect, it, vi } from "vitest";
 
-import { ANCHOR, DEFINDEX } from "../../../../config/simulation";
-import { createMockDefindex, type MockVaultChain } from "./mock";
+import { ANCHOR, DEFINDEX, NETWORK } from "../../../../config/simulation";
+import { createHorizonVaultChain, createMockDefindex, type MockVaultChain } from "./mock";
 
 const issuer = Keypair.random();
 const caller = Keypair.random();
@@ -136,5 +136,25 @@ describe("mock DeFindex adaptörü", () => {
     });
     expect(await instance.getVaultAPY()).toBe(DEFINDEX.apyPercent);
     expect(instance.mode).toBe("simulation");
+  });
+
+  it("zincirde olmayan hesabın pay bakiyesi sıfırdır; kasaya henüz katılmamış olmak hata değildir", async () => {
+    const missing = Object.assign(new Error("Not Found"), { response: { status: 404 } });
+    const chain = createHorizonVaultChain(issuer.publicKey(), NETWORK.horizonUrl, {
+      loadAccount: async () => {
+        throw missing;
+      },
+    });
+    expect(await chain.shareBalance("GYOK")).toBe(0n);
+  });
+
+  it("Horizon başka bir sebeple düşerse pay bakiyesi hatayı yutmaz", async () => {
+    const outage = Object.assign(new Error("Bad Gateway"), { response: { status: 502 } });
+    const chain = createHorizonVaultChain(issuer.publicKey(), NETWORK.horizonUrl, {
+      loadAccount: async () => {
+        throw outage;
+      },
+    });
+    await expect(chain.shareBalance("GACCOUNT")).rejects.toThrow("Bad Gateway");
   });
 });

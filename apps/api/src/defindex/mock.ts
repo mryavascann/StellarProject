@@ -142,15 +142,40 @@ export function createMockDefindex(options: MockDefindexOptions): DefindexAdapte
   };
 }
 
+/** Horizon'dan hesap okumak için gereken dar yüzey; testler burayı değiştirir. */
+export interface HorizonAccountReader {
+  loadAccount(accountId: string): Promise<Horizon.AccountResponse>;
+}
+
+/** Hesap zincirde hiç yok mu? Horizon bunu 404 ile söyler. */
+function accountMissing(error: unknown): boolean {
+  return (error as { response?: { status?: number } } | null)?.response?.status === 404;
+}
+
 /** Horizon'a giden gerçek zincir kapısı; simülasyonda mock adaptörün varsayılanıdır. */
-export function createHorizonVaultChain(issuerPublic: string, horizonUrl: string = NETWORK.horizonUrl): MockVaultChain {
-  const server = new Horizon.Server(horizonUrl);
+export function createHorizonVaultChain(
+  issuerPublic: string,
+  horizonUrl: string = NETWORK.horizonUrl,
+  server: HorizonAccountReader & Partial<MockVaultChain> = new Horizon.Server(horizonUrl),
+): MockVaultChain {
+  const submitter = server as unknown as Horizon.Server;
   return {
     async loadSequence(accountId) {
       return (await server.loadAccount(accountId)).sequenceNumber();
     },
+    /**
+     * Hesap zincirde yoksa bakiye sıfırdır, hata değil: kasaya yeni katılan birinin
+     * hesabı henüz açılmamış olabilir ve bu yüzden ana ekranın komple düşmesi yanlış olur.
+     * Başka her Horizon hatası yukarı çıkar — gerçek kesintiyi sessizce yutmayız.
+     */
     async shareBalance(accountId) {
-      const account = await server.loadAccount(accountId);
+      let account: Horizon.AccountResponse;
+      try {
+        account = await server.loadAccount(accountId);
+      } catch (error) {
+        if (accountMissing(error)) return 0n;
+        throw error;
+      }
       const line = account.balances.find(
         (balance) =>
           "asset_code" in balance &&
@@ -160,7 +185,7 @@ export function createHorizonVaultChain(issuerPublic: string, horizonUrl: string
       return line ? toStroopsExact(line.balance) : 0n;
     },
     async submit(transaction) {
-      const response = await server.submitTransaction(transaction);
+      const response = await submitter.submitTransaction(transaction);
       return { hash: response.hash };
     },
   };

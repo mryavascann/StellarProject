@@ -32,6 +32,22 @@ export function createKeySigner(secret: string): Signer {
 let kitReady = false;
 
 /**
+ * Modalda gösterilmeyen cüzdanlar.
+ *
+ * LOBSTR: modülü `networkPassphrase` değerini kaynak kodunda açıkça atlıyor
+ * ("Lobstr doesn't allow specifying the network that should be used, we skip the value"),
+ * yani ona testnet için imzalatamayız. Ayrıca lobstr.co web cüzdanını değil ayrı bir
+ * tarayıcı eklentisi ister; eklenti yokken kullanıcı lobstr.co'ya düşer ve hiçbir şey olmaz.
+ * Listede görünüp çalışmamak, demoda olabilecek en kötü sonuç.
+ */
+const NON_TESTNET_WALLETS = new Set(["lobstr"]);
+
+/** Cüzdan testnet'te imzalayabiliyor mu; modal yalnızca bunları gösterir. */
+export function isTestnetCapableWallet(productId: string): boolean {
+  return !NON_TESTNET_WALLETS.has(productId);
+}
+
+/**
  * Stellar Wallets Kit v2 (Freighter, xBull, Albedo…). Yalnızca tarayıcıda çalışır;
  * bu yüzden dinamik import edilir ve sunucu tarafında hiç yüklenmez.
  */
@@ -41,7 +57,7 @@ export async function connectWalletKit(): Promise<Signer> {
     import("@creit.tech/stellar-wallets-kit/modules/utils"),
   ]);
   if (!kitReady) {
-    StellarWalletsKit.init({ modules: defaultModules() });
+    StellarWalletsKit.init({ modules: defaultModules({ filterBy: (module) => isTestnetCapableWallet(module.productId) }) });
     kitReady = true;
   }
   const { address } = await StellarWalletsKit.authModal();
