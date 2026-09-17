@@ -2,8 +2,10 @@ import { Account, Keypair, Networks, Operation, Transaction, TransactionBuilder 
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  AccountNotFoundError,
   buildTrustlineTransaction,
   buildWithdrawalPaymentTransaction,
+  createHorizonGateway,
   submitClassicTransaction,
   type ClassicGateway,
 } from "./classic";
@@ -68,5 +70,25 @@ describe("klasik işlemler", () => {
     transaction.sign(member);
     await expect(submitClassicTransaction(gateway({ submit }), Networks.TESTNET, transaction.toXDR())).resolves.toEqual({ hash: "2".repeat(64) });
     expect(submit).toHaveBeenCalledOnce();
+  });
+});
+
+describe("zincirde olmayan hesap", () => {
+  const horizon = (status: number) => ({
+    loadAccount: async () => {
+      throw Object.assign(new Error("Not Found"), { response: { status } });
+    },
+  });
+
+  it("hesap yoksa kullanıcıya ne yapacağını söyleyen hata verir, genel 'yapılamıyor' değil", async () => {
+    const chain = createHorizonGateway("https://horizon-testnet.stellar.org", horizon(404) as never);
+    await expect(chain.hasTrustline("GYOK", ASSET)).rejects.toBeInstanceOf(AccountNotFoundError);
+    await expect(chain.loadAccount("GYOK")).rejects.toThrow(/test ağında/u);
+  });
+
+  it("Horizon başka sebeple düşerse hata olduğu gibi yukarı çıkar", async () => {
+    const chain = createHorizonGateway("https://horizon-testnet.stellar.org", horizon(502) as never);
+    await expect(chain.hasTrustline("GACCOUNT", ASSET)).rejects.toThrow("Not Found");
+    await expect(chain.hasTrustline("GACCOUNT", ASSET)).rejects.not.toBeInstanceOf(AccountNotFoundError);
   });
 });

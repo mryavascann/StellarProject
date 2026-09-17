@@ -73,16 +73,46 @@ export async function submitClassicTransaction(
   return gateway.submit(transaction);
 }
 
+/**
+ * Hesap Stellar ağında hiç yok. Ayrı bir hata tipi olmasının sebebi: bu bir arıza değil,
+ * kullanıcının yapabileceği bir eksiklik. Genel "İşlem şu an yapılamıyor" mesajına karışırsa
+ * kullanıcı ne yapacağını bilemez ve tekrar tekrar aynı düğmeye basar.
+ */
+export class AccountNotFoundError extends TypeError {
+  constructor(accountId: string) {
+    super(
+      `Bu hesap Stellar test ağında yok: ${accountId.slice(0, 4)}…${accountId.slice(-4)}. ` +
+        "Önce hesabı test parasıyla açman gerekiyor.",
+    );
+  }
+}
+
+/** Horizon "hesap yok" cevabını 404 ile verir; başka her hata gerçek bir arızadır. */
+function asAccountError(error: unknown, accountId: string): unknown {
+  return (error as { response?: { status?: number } } | null)?.response?.status === 404
+    ? new AccountNotFoundError(accountId)
+    : error;
+}
+
 /** Gerçek Horizon kapısı. */
-export function createHorizonGateway(horizonUrl: string): ClassicGateway {
-  const server = new Horizon.Server(horizonUrl);
+export function createHorizonGateway(
+  horizonUrl: string,
+  server: Pick<Horizon.Server, "loadAccount" | "submitTransaction"> = new Horizon.Server(horizonUrl),
+): ClassicGateway {
+  const load = async (accountId: string) => {
+    try {
+      return await server.loadAccount(accountId);
+    } catch (error) {
+      throw asAccountError(error, accountId);
+    }
+  };
   return {
     async loadAccount(accountId) {
-      const response = await server.loadAccount(accountId);
+      const response = await load(accountId);
       return new Account(response.accountId(), response.sequenceNumber());
     },
     async hasTrustline(accountId, asset) {
-      const account = await server.loadAccount(accountId);
+      const account = await load(accountId);
       return account.balances.some(
         (balance) => "asset_code" in balance && balance.asset_code === asset.code && balance.asset_issuer === asset.issuer,
       );
