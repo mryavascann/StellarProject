@@ -36,8 +36,18 @@ Tarih: 2026-09-17 22:55 · Ajan: claude-durumsuz-dagitim · Mod: simulation
   12 eşzamanlı durum sorgusu `4/12 → 12/12`, 1 sn arayla 5 sıralı sorgu `0/5 → 5/5`,
   withdraw `memo_type: id` ile 200. Son durum `pending_trust` (trustline yok → A.4 korunuyor).
 
+## Tarayıcı denemesi sonrası (23:20)
+Kullanıcı canlı siteyi elle denedi, iki hata çıktı; ikisi de test-first düzeltildi ve yayında:
+1. Zincirde olmayan hesapla girince `/api/defindex/overview` 503 → ana ekranın üç paralel
+   okumasından biri düştüğü için kasa hiç görünmüyordu. Mock DeFindex artık hesap yoksa
+   `0` pay döndürüyor (başka Horizon hataları yine yukarı çıkar) ve web'de getiri özeti
+   en-iyi-çaba oldu. Canlı doğrulama: yeni üretilmiş hesap → `shares: 0`, HTTP 200.
+2. LOBSTR modalda çıkıyor ama modülü `networkPassphrase`'i kaynak kodunda atlıyor ve ayrı
+   bir tarayıcı eklentisi istiyor → testnet'te imzalatılamaz. Listeden çıkarıldı.
+Test sayısı 245 → **252**.
+
 ## Yapmadım / neden
-- Elle tarayıcı akışı yine denenemedi (tarayıcı oturumu yok).
+- Düzeltme sonrası tam akış (yatır → talep → onay → çek) elle tekrar denenmedi.
 - `pnpm test:live` koşmadı; `.env.live` değerleri henüz yok (uydurulmadı).
 
 ## Bir sonraki ajana uyarı

@@ -1,6 +1,6 @@
 # PROJE DURUMU
 
-Son güncelleme: 2026-09-17 23:10 · Ajan: claude-durumsuz-dagitim · Mod: **simulation**
+Son güncelleme: 2026-09-17 23:20 · Ajan: claude-durumsuz-dagitim · Mod: **simulation**
 
 ## Faz
 Şu an: **Faz S3 tamamlandı** — simülasyonda tam döngü testnet'te çalışıyor, tam yığın Vercel'de yayında.
@@ -29,17 +29,23 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (`docs/faz0-can
       SEP-10 token'ından hemen sonra deposit **200** (önce 401) · 12 eşzamanlı durum sorgusu **12/12**
       (önce 4/12) · 1 sn arayla 5 sıralı sorgu **5/5** (önce 0/5) · withdraw memo'su `memo_type: id` ile geliyor.
       Son durum `pending_trust`: trustline yoksa anchor ödemeyi yapmıyor — A.4 davranışı korunuyor.
+- [x] **Tarayıcıda bulunan iki hata düzeltildi ve yayında** (23:18):
+      zincirde olmayan hesap için `/api/defindex/overview` artık `shares: 0` ile **200** dönüyor
+      (önce 503 → ana ekran komple düşüyordu); getiri özeti ayrıca en-iyi-çaba oldu.
+      LOBSTR cüzdan listesinden çıkarıldı: modülü `networkPassphrase`'i yok sayıyor, testnet'te imzalatılamıyor.
 - [x] `pnpm typecheck` temiz.
 
 ## Kırık / eksik
-- [ ] Web tarayıcıda **elle** tıklanarak denenmedi (kullanılabilir tarayıcı oturumu yok).
-- [ ] Cüzdan kiti (Freighter vb.) gerçek eklentiyle denenmedi.
+- [ ] Web tarayıcıda elle denendi (kullanıcı tarafından); iki hata çıktı ve düzeltildi.
+      Düzeltme sonrası akışın tamamı (yatır → talep → onay → çek) elle tekrar denenmeli.
+- [ ] Cüzdan kiti gerçek eklentiyle denenmedi. LOBSTR testnet'te çalışmaz (listeden çıkarıldı);
+      Freighter / xBull / Albedo / Rabet / Hana denenmeli.
 - [ ] `pnpm test:live` gerçek uçlara karşı çalıştırılmadı; `.env.live` değerleri etkinlik günü gelecek.
 - [ ] Canlı `getVaultInfo` pay fiyatı vermez → web bakiye/pay oranından türetir; canlıda doğrulanacak.
 
 ## Test durumu
-- Kontrat **30/30** · Core **49/49** · Scripts **13/13** · Mock anchor **22/22** · API **93/93** · Web **38/38**
-- Toplam **245/245 yeşil** · Uçtan uca **1/1** (bugün testnet'te iki kez) · `pnpm typecheck` temiz
+- Kontrat **30/30** · Core **49/49** · Scripts **13/13** · Mock anchor **22/22** · API **95/95** · Web **43/43**
+- Toplam **252/252 yeşil** · Uçtan uca **1/1** (bugün testnet'te iki kez) · `pnpm typecheck` temiz
 
 ## Ortam
 - node 24.19 · pnpm 11.22 · stellar CLI 28 · rustc 1.98 GNU · TypeScript 5.9
@@ -49,7 +55,8 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (`docs/faz0-can
   (`apps/web/src/app/api/[[...route]]/route.ts` → `@kasa/api/vercel`).
 
 ## Sıradaki iş (öncelik sırasıyla)
-1. Tarayıcı bağlantısı sağlanınca https://stellar-kasa.vercel.app/giris üzerinden akışı elle dene.
+1. https://stellar-kasa.vercel.app/giris → test hesabıyla gir, tam akışı elle dene
+   (yatır → talep → onay → çek). Hata çıkarsa footer'daki "Geliştirici modu" kutusu ham hatayı gösterir.
 2. Etkinlik Faz 0: `docs/faz0-canli-gecis.md` adım adım uygulanır → GO/NO-GO raporu.
 3. Demo paketi: README güncel, sunum, video.
 
@@ -60,6 +67,9 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (`docs/faz0-can
 - Oturum/işlem durumu için üç yer var: tarayıcı (JWT, işlem kimliği, ödeme hash'i),
   imzalı kimliğin içi (tutar, hesap, memo, zaman) ve zincir (ödeme yapıldı mı). Sunucu belleği yok.
 - Stellar metin memo'su 28 bayt: ödeme etiketi kimliğin imzasından kısaltılarak üretilir.
+- **Kişiye özel okuma, herkese ait ekranı düşürmemeli.** Zincirde olmayan hesap hata değil,
+  sıfır bakiyedir; `Promise.all` içindeki isteğe bağlı çağrı tüm ekranı kırıyordu.
+- LOBSTR modülü `networkPassphrase`'i kaynak kodunda atlıyor → testnet imzası mümkün değil.
 - `pnpm test:deploy` yalnız 200 kontrolü değil; dağıtılmış JS paketini indirip API adresini
   denetler. HTTP smoke testi bunu yakalamaz.
 - **RPC `scValToNative` birim enum'u `["Pending"]` dizisi verir**, CLI JSON `"Pending"` verir; core ikisini de kabul eder.
