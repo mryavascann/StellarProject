@@ -4,8 +4,10 @@ import { BRAND } from "@kasa/core";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { Button, Card } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { useSession } from "@/lib/session";
+import { Input } from "@/components/ui/input";
 
 /** Giriş: cüzdanla bağlan ya da (yalnızca test/demo) gizli anahtarla gir. */
 export default function LoginPage() {
@@ -48,7 +50,7 @@ export default function LoginPage() {
       <Card>
         <h2 className="lg mb-2">Cüzdanla bağlan</h2>
         <p className="sm muted mb-3">{BRAND.messages.noWallet}</p>
-        <Button busy={busy} busyLabel="Bağlanıyor…" onClick={() => void withWallet()}>
+        <Button className="w-full" busy={busy} busyLabel="Bağlanıyor…" onClick={() => void withWallet()}>
           Cüzdanı bağla
         </Button>
       </Card>
@@ -57,14 +59,14 @@ export default function LoginPage() {
         <h2 className="lg mb-2">Test hesabıyla gir</h2>
         <p className="sm muted mb-3">Yalnızca testnet demo hesapları için. Anahtar bu sekmede kalır, sunucuya gitmez.</p>
         <input
-          className="input mb-3"
+          className="mb-3"
           type="password"
           placeholder="S ile başlayan gizli anahtar"
           value={secret}
           onChange={(event) => setSecret(event.target.value)}
           autoComplete="off"
         />
-        <Button variant="secondary" onClick={withKey} disabled={secret.trim() === ""}>
+        <Button className="w-full" variant="outline" onClick={withKey} disabled={secret.trim() === ""}>
           Test hesabıyla gir
         </Button>
       </Card>

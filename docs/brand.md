@@ -1,5 +1,10 @@
 # Kasa — Marka ve Arayüz Kuralları
 
+> **Web arayüzünün görsel uygulama katmanı:** `apps/web/brand.md`.
+> Renk/ölçek/yarıçap değerleri ve `@theme` token'ları orada; bu dosya ürün geneli
+> marka kararlarını, tonu ve Türkçe mikro metinleri tutar (K-017).
+
+
 Bu dosya **tek doğruluk kaynağıdır**. Renk, tipografi, boşluk, para biçimi ve kullanıcıya
 gösterilen her cümle burada tanımlanır; koda **token olarak** gelir (Bölüm 0.5).
 

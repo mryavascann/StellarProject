@@ -264,6 +264,39 @@ Kasa testnet'te ve içindeki varlık kendi bastığımız mock token olduğu iç
 
 ---
 
+## K-017 · KARAR · Web arayüzü shadcn/ui (Base UI) üzerine kuruldu, görsel token'lar CSS'te
+
+**Karar:** `apps/web` içine shadcn/ui kuruldu; primitive katmanı **Base UI** (`init -b base`,
+React 19 + RSC uyumu için). Bileşenler `src/components/ui/` altına kopyalanır ve özelleştirme
+**kopyanın içinde** yapılır; üstüne sarmalayıcı yazılmaz.
+
+Kurulu bileşenler: `button`, `card`, `dialog`, `input`, `field` (+ zorunlu bağımlılıkları
+`label`, `separator`), `table`, `tabs`, `badge`, `sonner`, `skeleton`.
+
+**`form` yerine `field`:** istenen `form` bileşeni güncel kayıtta **yok**; shadcn form katmanını
+`Field` / `FieldLabel` / `FieldError` / `FieldDescription` bileşenlerine taşımış ve form
+kütüphanesini (React Hook Form vb.) kullanıcıya bırakmış. Olmayan bir bileşen uydurulmadı,
+gerçek karşılığı kuruldu.
+
+**Görsel token'lar nerede:** `apps/web/brand.md` yazılı kaynak, `apps/web/src/app/globals.css`
+içindeki `@theme` bloğu tek uygulama yeri. Bileşen dosyalarında hex yoktur; shadcn'in semantik
+adları (`--primary`, `--background` …) Kasa paletine `var()` ile bağlanır.
+
+**K-010'u günceller:** `packages/core/src/brand.ts` artık **metin ve ton** kaynağıdır (Türkçe
+mikro metinler, anchor durum cümleleri, rozet tonları — testler bunlara bakar). **Renk, ölçek,
+yarıçap ve boşluk** web'de `globals.css`'e taşındı; çalışma anında `<style>` üreten
+`lib/theme.ts` kaldırıldı. Sebep: Tailwind 4 ve shadcn token'ları derleme zamanında çözülüyor,
+ikinci bir çalışma zamanı kaynağı ikisini de çakıştırıyordu.
+
+**Para gösterimi:** arayüzdeki tüm tutarlar `apps/web/src/lib/format.ts` içindeki tek
+`formatTRY()` helper'ından geçer. `Intl.NumberFormat("tr-TR", …)` kullanılır ve formatter'a
+**metin** verilir (Intl v3), böylece `Number`'a düşülmez; hesap `decimal.js` ile yapılır.
+
+**Kapsam dışı (bilerek):** grafik bileşeni, karmaşık data grid, gelişmiş tarih aralığı seçici.
+Bakiye/getiri grafiği gerekirse Recharts ayrıca kurulur.
+
+---
+
 ## Roadmap (kapsam dışı — dokunma, buraya yaz)
 
 Bölüm 13'ün kapsam dışı listesi: çoklu kasa, kasalar arası transfer, karmaşık davet akışı,

@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { RequireSession } from "@/components/RequireSession";
-import { Button, Card, ErrorState, Skeleton, StatusBadge, Steps, type StepView } from "@/components/ui";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ErrorState, Skeleton, StatusBadge, Steps, type StepView } from "@/components/ui";
 import type { AnchorStatusView } from "@/lib/api";
 import { depositFlow, openAnchorPopup } from "@/lib/flows";
 import { normalizeFiatInput, statusText, tl } from "@/lib/format";
@@ -77,7 +81,7 @@ function Deposit({ address }: { address: string }) {
       <Card>
         <label className="flex flex-col gap-2">
           <span className="sm muted">Tutar (TL)</span>
-          <input className="input num" inputMode="decimal" placeholder="500,00" value={raw} onChange={(event) => setRaw(event.target.value)} disabled={running || done !== null} />
+          <Input className="num" inputMode="decimal" placeholder="500,00" value={raw} onChange={(event) => setRaw(event.target.value)} disabled={running || done !== null} />
         </label>
         <p className="xs muted mt-2">
           {limits.minAmount ? `En az ${tl(limits.minAmount)}` : ""}
@@ -85,7 +89,7 @@ function Deposit({ address }: { address: string }) {
           {limits.feePercent || limits.feeFixed ? ` · komisyon %${(limits.feePercent ?? "0").replace(".", ",")} + ${tl(limits.feeFixed ?? "0")}` : ""}
         </p>
         {!done ? (
-          <Button className="mt-4" busy={running} busyLabel="Sürüyor…" disabled={!withinLimits} onClick={() => void start()}>
+          <Button className="mt-4 w-full" busy={running} busyLabel="Sürüyor…" disabled={!withinLimits} onClick={() => void start()}>
             Yatırmayı başlat
           </Button>
         ) : null}
@@ -103,7 +107,7 @@ function Deposit({ address }: { address: string }) {
           {failure ? <p className="sm danger mt-3">{failure}</p> : null}
           {done ? (
             <div className="mt-4 flex flex-col gap-2">
-              <Link className="btn btn-primary" href="/">Kasaya dön</Link>
+              <Link className={cn(buttonVariants({ variant: "default" }), "w-full")} href="/">Kasaya dön</Link>
               {devMode ? <p className="xs mono muted">kasa işlemi: {done}</p> : null}
             </div>
           ) : null}

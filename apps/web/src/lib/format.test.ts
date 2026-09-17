@@ -2,10 +2,13 @@ import { BRAND } from "@kasa/core";
 import { describe, expect, it } from "vitest";
 
 import { SPEND_THRESHOLD_STROOPS } from "./config";
+import Decimal from "decimal.js";
+
 import {
   apyText,
   effectiveSharePrice,
   fiatToShares,
+  formatTRY,
   normalizeFiatInput,
   shares,
   sharesToFiat,
@@ -22,6 +25,17 @@ describe("para biçimlendirme", () => {
     expect(tl("0")).toBe("₺0,00");
     expect(tl("-750")).toBe("−₺750,00");
     expect(tl("84.2", true)).toBe("+₺84,20");
+  });
+
+  it("formatTRY tek geçiş noktasıdır: Intl'e metin verilir, Number'a düşülmez", () => {
+    // Number(...) bu değeri bozar: 9007199254740993 → 9007199254740992.
+    expect(formatTRY("9007199254740993.45")).toBe("₺9.007.199.254.740.993,45");
+    expect(formatTRY(new Decimal("1250.5"))).toBe("₺1.250,50");
+  });
+
+  it("formatTRY aşağı yuvarlar: olmayan kuruş gösterilmez", () => {
+    expect(formatTRY("10.999")).toBe("₺10,99");
+    expect(formatTRY("-10.999")).toBe("−₺10,99");
   });
 
   it("kasa payı 7 ondalıkla ve 'kasa payı' etiketiyle gösterilir", () => {

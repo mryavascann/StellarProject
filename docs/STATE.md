@@ -1,6 +1,6 @@
 # PROJE DURUMU
 
-Son güncelleme: 2026-09-17 23:46 · Ajan: claude-durumsuz-dagitim · Mod: **simulation**
+Son güncelleme: 2026-09-18 00:20 · Ajan: claude-durumsuz-dagitim · Mod: **simulation**
 
 ## Faz
 Şu an: **Faz S3 tamamlandı** — simülasyonda tam döngü testnet'te çalışıyor, tam yığın Vercel'de yayında.
@@ -39,7 +39,10 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (`docs/faz0-can
 - [x] **Davetle katılma** (K-016): `POST /api/vault/join` → hesabı friendbot ile açar,
       `add_member`'ı sunucudaki admin anahtarıyla imzalar. Web'de "Kasaya katıl" kartı.
       Canlıda uç çalışıyor ve `ADMIN_SECRET` tanımlı olmadığını **açıkça söylüyor**.
-- [x] `pnpm typecheck` temiz.
+- [x] **Arayüz shadcn/ui (Base UI) üzerine taşındı** (K-017): 12 bileşen `apps/web/src/components/ui/`,
+      görsel token'lar `globals.css` `@theme` bloğunda, yazılı kaynak `apps/web/brand.md`.
+      Tüm tutarlar tek `formatTRY()` helper'ından geçiyor (Intl + decimal.js, float yok).
+- [x] `pnpm typecheck` ve `pnpm --filter @kasa/web build` temiz.
 
 ## Kırık / eksik
 - [ ] Web tarayıcıda elle denendi (kullanıcı tarafından); iki hata çıktı ve düzeltildi.
@@ -50,8 +53,8 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (`docs/faz0-can
 - [ ] Canlı `getVaultInfo` pay fiyatı vermez → web bakiye/pay oranından türetir; canlıda doğrulanacak.
 
 ## Test durumu
-- Kontrat **30/30** · Core **49/49** · Scripts **13/13** · Mock anchor **22/22** · API **104/104** · Web **46/46**
-- Toplam **264/264 yeşil** · Uçtan uca **1/1** (bugün testnet'te iki kez) · `pnpm typecheck` temiz
+- Kontrat **30/30** · Core **49/49** · Scripts **13/13** · Mock anchor **22/22** · API **104/104** · Web **48/48**
+- Toplam **266/266 yeşil** · Uçtan uca **1/1** (bugün testnet'te iki kez) · `pnpm typecheck` temiz
 
 ## Ortam
 - node 24.19 · pnpm 11.22 · stellar CLI 28 · rustc 1.98 GNU · TypeScript 5.9
@@ -80,6 +83,10 @@ Tamamlanan: Faz S1 · S2 · S3. Sıradaki: etkinlik günü Faz 0 (`docs/faz0-can
 - LOBSTR modülü `networkPassphrase`'i kaynak kodunda atlıyor → testnet imzası mümkün değil.
 - **Popup yalnız tıklama anında açılır.** Ağ çağrılarından sonra `window.open` çağırmak
   tarayıcıda engellenir; pencere boş açılıp adres sonradan yollanmalı.
+- shadcn kurulumu artık `-b base|radix|aria` bayrağıyla primitive seçtiriyor ve preset soruyor
+  (`-p nova`); `form` bileşeni kayıttan kalkmış, yerine `field` var.
+- Tailwind 4'te semantik adların çalışması için `@theme inline` eşlemesi şart; onu silersen
+  bileşenler stilsiz kalır (build hata vermez, sessizce bozulur).
 - Stellar'da hesabın var olması için minimum XLM gerekir; testnet'te friendbot açar.
   Kasaya para yatırmak ayrıca **üyelik** ister (kontrat üye olmayanı reddeder).
 - `pnpm test:deploy` yalnız 200 kontrolü değil; dağıtılmış JS paketini indirip API adresini

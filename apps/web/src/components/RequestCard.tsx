@@ -9,7 +9,8 @@ import { sharesToFiat, tl } from "@/lib/format";
 import { useSession } from "@/lib/session";
 import { memberLabel } from "@/lib/useVault";
 
-import { Button, StatusBadge } from "./ui";
+import { Button } from "@/components/ui/button";
+import { StatusBadge } from "./ui";
 
 interface RequestCardProps {
   readonly request: VaultRequestView;
@@ -84,7 +85,8 @@ export function RequestCard({ request, labels, admin, quorum, sharePrice, rate, 
       <div className="flex gap-2">
         {request.status === "Pending" ? (
           <Button
-            variant="secondary"
+            className="w-full"
+            variant="outline"
             busy={busy === "approve"}
             busyLabel="Onaylanıyor…"
             disabled={approveGuard() !== null}
@@ -95,12 +97,12 @@ export function RequestCard({ request, labels, admin, quorum, sharePrice, rate, 
           </Button>
         ) : null}
         {request.status === "Approved" && !expired ? (
-          <Button busy={busy === "execute"} busyLabel="Ödeniyor…" onClick={() => void act("execute", { function: "execute", requestId: request.id })}>
+          <Button className="w-full" busy={busy === "execute"} busyLabel="Ödeniyor…" onClick={() => void act("execute", { function: "execute", requestId: request.id })}>
             Kasadan öde
           </Button>
         ) : null}
         {canCancel ? (
-          <Button variant="danger" busy={busy === "cancel"} busyLabel="İptal ediliyor…" onClick={() => void act("cancel", { function: "cancel", requestId: request.id })}>
+          <Button className="w-full" variant="destructive" busy={busy === "cancel"} busyLabel="İptal ediliyor…" onClick={() => void act("cancel", { function: "cancel", requestId: request.id })}>
             İptal et
           </Button>
         ) : null}

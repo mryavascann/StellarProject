@@ -2,46 +2,34 @@
 
 import { BRAND, type Tone } from "@kasa/core";
 import Link from "next/link";
-import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Skeleton as SkeletonBar } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  readonly variant?: Variant;
-  /** Yükleniyor metni: buton kilitlenir ve metin değişir ("Gönderiliyor…"). */
-  readonly busyLabel?: string;
-  readonly busy?: boolean;
-}
+/*
+ * Bu dosya ÜRÜNE ÖZEL durum bileşenlerini tutar (boş / yükleniyor / hata / adımlar / rozet).
+ * Temel bileşenler (button, card, badge, skeleton…) shadcn dosyalarındadır ve doğrudan
+ * `@/components/ui/*` üzerinden kullanılır; onların üstüne sarmalayıcı yazılmaz.
+ */
 
-/** Buton: ekranda tek birincil eylem; metin fiille başlar (brand.md Bölüm 6). */
-export function Button({ variant = "primary", busy = false, busyLabel, children, disabled, className = "", ...rest }: ButtonProps) {
-  return (
-    <button className={`btn btn-${variant} ${className}`} disabled={disabled || busy} {...rest}>
-      {busy && busyLabel ? busyLabel : children}
-    </button>
-  );
-}
-
-export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={`card ${className}`}>{children}</section>;
-}
-
-/** Durum rozeti: renk + metin birlikte; renk tek başına anlam taşımaz. */
+/** Durum rozeti: renk + metin birlikte; renk tek başına anlam taşımaz (brand.md Bölüm 2). */
 export function StatusBadge({ tone, label }: { tone: Tone; label: string }) {
   return (
-    <span className={`badge tone-${tone}`} data-tone={tone}>
+    <Badge variant="tone" className={`tone-${tone}`} data-tone={tone}>
       <span aria-hidden="true">●</span>
       {label}
-    </span>
+    </Badge>
   );
 }
 
-/** Yükleniyor: iskelet kutular; dönen çark ve "Yükleniyor…" yazısı yok. */
+/** Yükleniyor: iskelet kutular; dönen çark ve "Yükleniyor…" yazısı yok (brand.md Bölüm 6). */
 export function Skeleton({ lines = 3 }: { lines?: number }) {
   return (
     <div className="flex flex-col gap-3" role="status" aria-label="yükleniyor" data-testid="skeleton">
       {Array.from({ length: lines }, (_, index) => (
-        <div key={index} className="skeleton" style={{ width: `${100 - index * 15}%` }} />
+        <SkeletonBar key={index} className="h-5" style={{ width: `${100 - index * 15}%` }} />
       ))}
     </div>
   );
@@ -53,7 +41,8 @@ export function EmptyState({ message, actionLabel, href }: { message: string; ac
     <div className="flex flex-col gap-4 items-start">
       <p className="muted">{message}</p>
       {actionLabel && href ? (
-        <Link className="btn btn-primary" href={href}>
+        // Bağlantı butonu: görünüm buton varyantlarından gelir, ayrı bir stil tanımlanmaz.
+        <Link className={cn(buttonVariants({ variant: "default" }), "w-full")} href={href}>
           {actionLabel}
         </Link>
       ) : null}
@@ -78,7 +67,7 @@ export function ErrorState({
       <p className="danger">{message}</p>
       {devMode && detail ? <pre className="mono xs muted whitespace-pre-wrap">{detail}</pre> : null}
       {onRetry ? (
-        <Button variant="secondary" onClick={onRetry}>
+        <Button variant="outline" className="w-full" onClick={onRetry}>
           {BRAND.messages.retry}
         </Button>
       ) : null}

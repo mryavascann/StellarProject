@@ -2,6 +2,7 @@
 
 import { BRAND } from "@kasa/core";
 
+import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/session";
 
 /** Footer: geliştirici modu anahtarı (jüri demosunda açılır) ve çıkış. */
@@ -15,9 +16,9 @@ export function Footer() {
         Geliştirici modu
       </label>
       {address ? (
-        <button type="button" className="btn btn-ghost" style={{ width: "auto" }} onClick={() => void disconnect()}>
+        <Button type="button" variant="ghost" size="sm" onClick={() => void disconnect()}>
           Çıkış yap
-        </button>
+        </Button>
       ) : null}
     </footer>
   );

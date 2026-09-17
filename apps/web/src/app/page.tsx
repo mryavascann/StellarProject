@@ -7,7 +7,10 @@ import { DEFINDEX, VAULT_INIT } from "../../../../config/simulation";
 import { JoinCard } from "@/components/JoinCard";
 import { RequestCard } from "@/components/RequestCard";
 import { RequireSession } from "@/components/RequireSession";
-import { Card, EmptyState, ErrorState, Skeleton } from "@/components/ui";
+import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { EmptyState, ErrorState, Skeleton } from "@/components/ui";
 import { EXPLORER_NETWORK } from "@/lib/config";
 import { apyText, dateText, sharesToFiat, shares as sharesText, tl, yieldFiat } from "@/lib/format";
 import { useSession } from "@/lib/session";
@@ -63,9 +66,9 @@ function Home({ address }: { address: string }) {
       </Card>
 
       <div className="grid grid-cols-3 gap-2">
-        <Link className="btn btn-primary" href="/yatir">Para yatır</Link>
-        <Link className="btn btn-secondary" href="/talep">Harcama iste</Link>
-        <Link className="btn btn-secondary" href="/cek">Para çek</Link>
+        <Link className={cn(buttonVariants({ variant: "default" }), "flex-1")} href="/yatir">Para yatır</Link>
+        <Link className={cn(buttonVariants({ variant: "outline" }), "flex-1")} href="/talep">Harcama iste</Link>
+        <Link className={cn(buttonVariants({ variant: "outline" }), "flex-1")} href="/cek">Para çek</Link>
       </div>
 
       <Card>

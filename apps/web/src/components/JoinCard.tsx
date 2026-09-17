@@ -3,7 +3,8 @@
 import { useState } from "react";
 
 import { api, type JoinResultView } from "@/lib/api";
-import { Button, Card } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 interface JoinCardProps {
   readonly address: string;
@@ -39,7 +40,7 @@ export function JoinCard({ address, join = api.vaultJoin, onJoined }: JoinCardPr
         <h2 className="subtitle">Bu kasada henüz üye değilsin</h2>
         <p className="muted">Katılınca para yatırabilir, harcama talebi açabilir ve oy verebilirsin.</p>
       </div>
-      <Button onClick={handleJoin} busy={busy} busyLabel="Katılıyor…">
+      <Button className="w-full" onClick={handleJoin} busy={busy} busyLabel="Katılıyor…">
         Kasaya katıl
       </Button>
       {error ? <p className="error">{error}</p> : null}

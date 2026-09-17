@@ -1,184 +1,307 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-/* Renk ve ölçek tokenları çalışma anında brand.ts'ten üretilip <style> ile basılır (lib/theme.ts). */
-
-html {
-  background: var(--kasa-bg);
-  color: var(--kasa-text);
-  font-family: var(--kasa-font);
-  font-size: 16px;
-  -webkit-font-smoothing: antialiased;
+/*
+ * Koyu tema iki yoldan açılır: sistem tercihi veya `data-theme="dark"`.
+ * `data-theme="light"` sistem tercihini ezer, böylece kullanıcı açık temada kalabilir.
+ */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:not([data-theme="light"], [data-theme="light"] *)) {
+      @slot;
+    }
+  }
 }
 
-body {
-  margin: 0;
-  background: var(--kasa-bg);
-  min-height: 100dvh;
+/* ===========================================================================
+ * TASARIM TOKEN'LARI — tek kaynak: apps/web/brand.md
+ * Bileşenlerin içine hex YAZILMAZ; hepsi buradaki değişkenlerden okunur.
+ * =========================================================================== */
+@theme {
+  /* --- Renk paleti (brand.md Bölüm 2, açık tema) --- */
+  --color-kasa-bg: #f7f7f5;
+  --color-kasa-surface: #ffffff;
+  --color-kasa-surface-2: #f0f0ec;
+  --color-kasa-border: #e3e2dd;
+  --color-kasa-text: #1a1a18;
+  --color-kasa-text-muted: #6b6b64;
+  --color-kasa-accent: #1f5f4b;
+  --color-kasa-on-accent: #ffffff;
+  --color-kasa-positive: #1f7a4c;
+  --color-kasa-warning: #8a6a12;
+  --color-kasa-danger: #a32b2b;
+
+  /* --- Tipografi (brand.md Bölüm 3) --- */
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+  --text-hero: 3.5rem;
+  --text-hero--line-height: 3.75rem;
+  --text-xl: 1.75rem;
+  --text-xl--line-height: 2.125rem;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.75rem;
+  --text-md: 1rem;
+  --text-md--line-height: 1.5rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+
+  /* --- Yarıçap ve gölge (brand.md Bölüm 4). Tek gölge seviyesi vardır. --- */
+  --radius-card: 0.75rem;
+  --radius-control: 0.5rem;
+  --radius-pill: 999px;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.06);
+
+  /* --- Yerleşim: taban birim 4px, sayfa 560px, dokunma hedefi 44px --- */
+  --spacing-gutter: 1rem;
+  --spacing-card: 1.25rem;
+  --spacing-touch: 2.75rem;
+  --container-page: 35rem;
 }
 
+/*
+ * shadcn/Base UI bileşenlerinin sınıf adları (`bg-background`, `text-muted-foreground` …)
+ * Tailwind'in renk alanına buradan bağlanır. `inline` olması, değerin `var()` zinciriyle
+ * okunmasını sağlar: koyu temada palet değişince bu adlar kendiliğinden yeni değeri alır.
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-heading: var(--font-sans);
+  /* shadcn bileşenleri rounded-sm/md/lg/xl bekler; hepsi kart yarıçapından türetilir. */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* Semantik adların Kasa paletine bağlandığı yer. Bileşen dosyalarına dokunmadan tema değişir. */
+:root {
+  --background: var(--color-kasa-bg);
+  --foreground: var(--color-kasa-text);
+  --card: var(--color-kasa-surface);
+  --card-foreground: var(--color-kasa-text);
+  --popover: var(--color-kasa-surface);
+  --popover-foreground: var(--color-kasa-text);
+  --primary: var(--color-kasa-accent);
+  --primary-foreground: var(--color-kasa-on-accent);
+  --secondary: var(--color-kasa-surface-2);
+  --secondary-foreground: var(--color-kasa-text);
+  --muted: var(--color-kasa-surface-2);
+  --muted-foreground: var(--color-kasa-text-muted);
+  --accent: var(--color-kasa-surface-2);
+  --accent-foreground: var(--color-kasa-text);
+  --destructive: var(--color-kasa-danger);
+  --border: var(--color-kasa-border);
+  --input: var(--color-kasa-border);
+  --ring: var(--color-kasa-accent);
+  --radius: var(--radius-card);
+
+  /* Ekran sınıflarının (aşağıda) okuduğu adlar; aynı token'lara bağlı, kopya değer yok. */
+  --kasa-bg: var(--color-kasa-bg);
+  --kasa-surface: var(--color-kasa-surface);
+  --kasa-surface-2: var(--color-kasa-surface-2);
+  --kasa-border: var(--color-kasa-border);
+  --kasa-text: var(--color-kasa-text);
+  --kasa-text-muted: var(--color-kasa-text-muted);
+  --kasa-accent: var(--color-kasa-accent);
+  --kasa-on-accent: var(--color-kasa-on-accent);
+  --kasa-positive: var(--color-kasa-positive);
+  --kasa-warning: var(--color-kasa-warning);
+  --kasa-danger: var(--color-kasa-danger);
+  --kasa-max: var(--container-page);
+  --kasa-gutter: var(--spacing-gutter);
+  --kasa-card-pad: var(--spacing-card);
+  --kasa-touch: var(--spacing-touch);
+  --kasa-mono: var(--font-mono);
+}
+
+/*
+ * Koyu tema (brand.md Bölüm 2). Yalnız palet değişir; yukarıdaki semantik eşlemeler
+ * `var()` üzerinden okuduğu için kendiliğinden koyu değerlere döner.
+ * CSS'te "mixin" olmadığı için blok iki seçici için de yazılır: sistem tercihi ve açık seçim.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-kasa-bg: #121312;
+    --color-kasa-surface: #1b1c1b;
+    --color-kasa-surface-2: #232523;
+    --color-kasa-border: #2f312f;
+    --color-kasa-text: #f2f2ef;
+    --color-kasa-text-muted: #a0a099;
+    --color-kasa-accent: #4fa588;
+    --color-kasa-on-accent: #0e1a15;
+    --color-kasa-positive: #4fa588;
+    --color-kasa-warning: #d4a72c;
+    --color-kasa-danger: #e07a7a;
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-kasa-bg: #121312;
+  --color-kasa-surface: #1b1c1b;
+  --color-kasa-surface-2: #232523;
+  --color-kasa-border: #2f312f;
+  --color-kasa-text: #f2f2ef;
+  --color-kasa-text-muted: #a0a099;
+  --color-kasa-accent: #4fa588;
+  --color-kasa-on-accent: #0e1a15;
+  --color-kasa-positive: #4fa588;
+  --color-kasa-warning: #d4a72c;
+  --color-kasa-danger: #e07a7a;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+    background: var(--color-kasa-bg);
+    color: var(--color-kasa-text);
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    @apply bg-background text-foreground;
+  }
+
+  a {
+    color: var(--color-kasa-accent);
+    text-underline-offset: 3px;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-kasa-accent);
+    outline-offset: 2px;
+  }
+}
+
+/* ===========================================================================
+ * EKRAN SINIFLARI — ürün ekranlarının ortak yerleşim ve metin sınıfları.
+ * Bileşen görünümü shadcn dosyalarında; burada yalnız sayfa iskeleti kalır.
+ * =========================================================================== */
 .page {
-  max-width: var(--kasa-max);
+  max-width: var(--container-page);
   margin: 0 auto;
-  padding: 24px var(--kasa-gutter) 48px;
+  padding: 1.5rem var(--spacing-gutter) 3rem;
 }
 
 .card {
-  background: var(--kasa-surface);
-  border: 1px solid var(--kasa-border);
+  background: var(--color-kasa-surface);
+  border: 1px solid var(--color-kasa-border);
   border-radius: var(--radius-card);
-  padding: var(--kasa-card-pad);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+  padding: var(--spacing-card);
+  box-shadow: var(--shadow-card);
 }
 
 .muted {
-  color: var(--kasa-text-muted);
+  color: var(--color-kasa-text-muted);
 }
 
+/* Tutar gösteren her element bunu kullanır (brand.md Bölüm 5). */
 .num {
   font-variant-numeric: tabular-nums;
 }
 
 .hero {
-  font-size: var(--fs-hero);
-  line-height: var(--fs-hero-lh);
+  font-size: var(--text-hero);
+  line-height: var(--text-hero--line-height);
   font-weight: 600;
   letter-spacing: -0.02em;
 }
 
 .title {
-  font-size: var(--fs-xl);
-  line-height: var(--fs-xl-lh);
+  font-size: var(--text-xl);
+  line-height: var(--text-xl--line-height);
   font-weight: 600;
 }
 
+.subtitle,
 .lg {
-  font-size: var(--fs-lg);
-  line-height: var(--fs-lg-lh);
+  font-size: var(--text-lg);
+  line-height: var(--text-lg--line-height);
   font-weight: 600;
 }
 
 .sm {
-  font-size: var(--fs-sm);
-  line-height: var(--fs-sm-lh);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
 }
 
 .xs {
-  font-size: var(--fs-xs);
-  line-height: var(--fs-xs-lh);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
 }
 
 .mono {
-  font-family: var(--kasa-mono);
+  font-family: var(--font-mono);
   word-break: break-all;
 }
 
 .positive {
-  color: var(--kasa-positive);
+  color: var(--color-kasa-positive);
 }
 
-.danger {
-  color: var(--kasa-danger);
+.danger,
+.error {
+  color: var(--color-kasa-danger);
 }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: var(--kasa-touch);
-  padding: 0 16px;
-  border-radius: var(--radius-control);
-  border: 1px solid transparent;
-  font-weight: 500;
-  font-size: var(--fs-md);
-  cursor: pointer;
-  transition: opacity 150ms, background-color 150ms;
-  width: 100%;
+.tone-neutral {
+  color: var(--color-kasa-text-muted);
 }
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: default;
+.tone-progress {
+  color: var(--color-kasa-warning);
 }
-
-.btn-primary {
-  background: var(--kasa-accent);
-  color: var(--kasa-on-accent);
+.tone-action {
+  color: var(--color-kasa-accent);
 }
-
-.btn-secondary {
-  background: var(--kasa-surface);
-  color: var(--kasa-text);
-  border-color: var(--kasa-border);
+.tone-success {
+  color: var(--color-kasa-positive);
 }
-
-.btn-ghost {
-  background: transparent;
-  color: var(--kasa-text-muted);
-}
-
-.btn-danger {
-  background: transparent;
-  color: var(--kasa-danger);
-  border-color: var(--kasa-danger);
-}
-
-.input {
-  width: 100%;
-  min-height: var(--kasa-touch);
-  padding: 0 12px;
-  border: 1px solid var(--kasa-border);
-  border-radius: var(--radius-control);
-  background: var(--kasa-surface);
-  color: var(--kasa-text);
-  font-size: var(--fs-md);
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 10px;
-  border-radius: var(--radius-pill);
-  border: 1px solid currentColor;
-  font-size: var(--fs-xs);
-  line-height: var(--fs-xs-lh);
-  font-weight: 500;
-}
-
-.tone-neutral { color: var(--kasa-text-muted); }
-.tone-progress { color: var(--kasa-warning); }
-.tone-action { color: var(--kasa-accent); }
-.tone-success { color: var(--kasa-positive); }
-.tone-danger { color: var(--kasa-danger); }
-
-.skeleton {
-  background: var(--kasa-surface-2);
-  border-radius: var(--radius-control);
-  min-height: 20px;
+.tone-danger {
+  color: var(--color-kasa-danger);
 }
 
 .row {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 12px;
-  padding: 12px 0;
-  border-top: 1px solid var(--kasa-border);
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--color-kasa-border);
 }
 
 .row:first-child {
   border-top: 0;
-}
-
-a {
-  color: var(--kasa-accent);
-  text-underline-offset: 3px;
-}
-
-:focus-visible {
-  outline: 2px solid var(--kasa-accent);
-  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

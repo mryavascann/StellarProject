@@ -4,7 +4,8 @@ import { BRAND, explorerUrl } from "@kasa/core";
 import Link from "next/link";
 
 import { RequireSession } from "@/components/RequireSession";
-import { Card, EmptyState, ErrorState, Skeleton } from "@/components/ui";
+import { Card } from "@/components/ui/card";
+import { EmptyState, ErrorState, Skeleton } from "@/components/ui";
 import { EXPLORER_NETWORK } from "@/lib/config";
 import { dateText, sharesToFiat, tl } from "@/lib/format";
 import { useSession } from "@/lib/session";

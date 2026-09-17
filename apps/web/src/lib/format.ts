@@ -1,4 +1,4 @@
-import { BRAND, assetToFiat, formatFiat, formatShares, fromStroops, resolveStatusText, toStroops, type StatusText } from "@kasa/core";
+import { BRAND, assetToFiat, formatShares, fromStroops, resolveStatusText, toStroops, type StatusText } from "@kasa/core";
 import Decimal from "decimal.js";
 
 import { SPEND_QUORUM, SPEND_THRESHOLD_STROOPS } from "./config";
@@ -26,7 +26,34 @@ export function normalizeFiatInput(raw: string): string | null {
   return `${whole}.${fraction.padEnd(2, "0")}`;
 }
 
-export const tl = (value: string | Decimal, signed = false) => formatFiat(value, { signed });
+/** Tipografik eksi (U+2212). Intl ASCII tire verir; marka tipografik eksi ister (brand.md Bölüm 5). */
+const MINUS = "−";
+
+/**
+ * Arayüzdeki TEK para biçimlendiricisi (brand.md Bölüm 5).
+ *
+ * Neden böyle:
+ * - `Intl.NumberFormat`'a **metin** verilir (Intl v3). `Number`'a çevirmek büyük tutarlarda
+ *   kuruş kaybettirir; para asla float'a düşmez.
+ * - Hesap `decimal.js` ile yapılır, gösterimde **aşağı** yuvarlanır: olmayan kuruş gösterilmez.
+ * - `signed` yalnız kazanç bağlamında kullanılır ("+₺84,20").
+ */
+export function formatTRY(value: string | Decimal, options: { signed?: boolean } = {}): string {
+  const amount = new Decimal(value);
+  const rounded = amount.toFixed(2, Decimal.ROUND_DOWN);
+  const formatter = new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: "TRY",
+    ...(options.signed === true ? { signDisplay: "exceptZero" as const } : {}),
+  });
+  // Intl v3 `format()`'a metin verilmesine izin verir; TypeScript'in kütüphane tipleri
+  // hâlâ yalnız `number | bigint` diyor. Metin vermek ŞART: `Number`'a çevirmek kuruş kaybettirir.
+  const format = formatter.format as unknown as (value: string) => string;
+  return format(rounded).replace("-", MINUS);
+}
+
+/** Kısa ad: ekranlarda `tl(...)` okunuyor. Tüm tutarlar buradan `formatTRY`'ye gider. */
+export const tl = (value: string | Decimal, signed = false) => formatTRY(value, { signed });
 export const shares = (stroops: bigint) => formatShares(stroops);
 
 /** Getiri: pay × (fiyat − başlangıç fiyatı) × kur. Başlangıç fiyatı 1 (⚠ SİM, config). */

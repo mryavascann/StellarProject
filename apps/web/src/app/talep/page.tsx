@@ -4,7 +4,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { RequireSession } from "@/components/RequireSession";
-import { Button, Card, ErrorState, Skeleton } from "@/components/ui";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ErrorState, Skeleton } from "@/components/ui";
 import { runVaultCall } from "@/lib/flows";
 import { fiatToShares, normalizeFiatInput, sharesToFiat, spendMessage } from "@/lib/format";
 import { useSession } from "@/lib/session";
@@ -54,16 +57,16 @@ function Spend({ address }: { address: string }) {
       <Card>
         <label className="flex flex-col gap-2">
           <span className="sm muted">Tutar (TL)</span>
-          <input className="input num" inputMode="decimal" placeholder="750,00" value={raw} onChange={(event) => setRaw(event.target.value)} />
+          <Input className="num" inputMode="decimal" placeholder="750,00" value={raw} onChange={(event) => setRaw(event.target.value)} />
         </label>
         <label className="flex flex-col gap-2 mt-3">
           <span className="sm muted">Ne için</span>
-          <input className="input" placeholder="Kira Ekim" value={note} onChange={(event) => setNote(event.target.value)} maxLength={80} />
+          <Input placeholder="Kira Ekim" value={note} onChange={(event) => setNote(event.target.value)} maxLength={80} />
         </label>
         {message ? <p className="sm mt-3" data-testid="spend-message">{message}</p> : null}
         {devMode && amountShares > 0n ? <p className="xs mono muted mt-1">{amountShares.toString()} stroop</p> : null}
         {failure ? <p className="sm danger mt-2">{failure}</p> : null}
-        <Button className="mt-4" busy={busy} busyLabel="Gönderiliyor…" disabled={!valid} onClick={() => void submit()}>
+        <Button className="mt-4 w-full" busy={busy} busyLabel="Gönderiliyor…" disabled={!valid} onClick={() => void submit()}>
           Talebi gönder
         </Button>
       </Card>
